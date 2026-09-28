@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AstroErg — Ergo-native DEX terminal</title>
+<meta name="description" content="AstroErg is an Ergo-native swap quote terminal with a deep-space mission-control theme. v1 quotes only — on-chain settlement ships in Phase 2.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=0.2.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='21' fill='%2308121d' stroke='%237dd3fc' stroke-width='3'/%3E%3Cpath d='M15 26a9 9 0 0 1 18 0v3a9 6 0 0 1-18 0z' fill='%237dd3fc' opacity='.85'/%3E%3C/svg%3E">
+</head>
+<body data-page="swap">
+<canvas id="starfield"></canvas>
+<div class="nebula"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <svg width="38" height="38" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <circle cx="24" cy="24" r="20" fill="rgba(125,211,252,.10)" stroke="#7dd3fc" stroke-width="2.5"/>
+        <path d="M15 25a9 9 0 0 1 18 0v2.5a9 5.5 0 0 1-18 0z" fill="#0b1226" stroke="#7dd3fc" stroke-width="2"/>
+        <ellipse cx="28.5" cy="22.5" rx="2.6" ry="3.4" fill="#7dd3fc" opacity=".75" transform="rotate(18 28.5 22.5)"/>
+        <rect x="9" y="35" width="30" height="5" rx="2.5" fill="#a78bfa" opacity=".55"/>
+        <circle cx="24" cy="6.5" r="2" fill="#ff6b1a"/>
+      </svg>
+      <span class="brand-name">AstroErg</span>
+      <span class="brand-tag">v1 · QUOTE TERMINAL</span>
+    </div>
+    <nav class="mainnav">
+      <a href="index.html" data-nav="swap">Swap</a>
+      <a href="pools.html" data-nav="pools">Pools</a>
+      <a href="tokens.html" data-nav="tokens">Tokens</a>
+      <a href="docs.html" data-nav="docs">Docs</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="src-badge loading" id="src-badge">○ loading…</span>
+      <button class="btn small" id="wallet-btn">Connect Nautilus</button>
+      <span class="wallet-chip" id="wallet-chip"><span>🛰</span><span class="addr"></span><span class="bal"></span></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Trade the <span class="grad">Ergo frontier</span></h1>
+    <p class="sub">A SundaeSwap-style swap terminal for Ergo-native (EIP-4) tokens — mission-control UI, honest quotes, zero fake trades.</p>
+    <div class="banner" role="note">
+      <strong>Honest status — v1 quotes, it doesn't settle.</strong>
+      AstroErg v1 computes indicative quotes from public market data. It <strong>does not</strong> create, sign, or submit any on-chain transaction.
+      On-chain settlement (forked CC0 Spectrum contracts → testnet shakedown → community review) is <strong>Phase 2</strong>. Nothing here is audited.
+    </div>
+  </section>
+
+  <section class="swap-layout">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h2 style="font-family:var(--font-display);margin:0;font-size:1.2rem">🛰 Swap console</h2>
+        <span class="pill">x·y=k quotes</span>
+      </div>
+
+      <div class="token-box">
+        <label for="in-amount">You send</label>
+        <div class="token-row">
+          <div class="token-select"><select id="in-token" aria-label="Token to send"></select><span>▾</span></div>
+          <input class="amount-input" id="in-amount" inputmode="decimal" placeholder="0.0" autocomplete="off">
+        </div>
+        <div class="token-meta"><span id="in-meta"></span><span><span id="pair-count">–</span> pairs tracked</span></div>
+      </div>
+
+      <div class="swap-arrow"><button id="flip" title="Flip direction" aria-label="Flip direction">⇅</button></div>
+
+      <div class="token-box">
+        <label>You receive (estimated)</label>
+        <div class="token-row">
+          <div class="token-select"><select id="out-token" aria-label="Token to receive"></select><span>▾</span></div>
+          <div class="amount-input" style="display:flex;align-items:center;justify-content:flex-end;color:var(--faint);font-size:1rem" id="out-hint">quote →</div>
+        </div>
+        <div class="token-meta"><span id="out-meta"></span><span>depth: estimated</span></div>
+      </div>
+
+      <div class="slip-row">
+        <span>Slippage tolerance</span>
+        <button class="slip-btn on" data-slip="50">0.5%</button>
+        <button class="slip-btn" data-slip="100">1%</button>
+        <button class="slip-btn" data-slip="200">2%</button>
+      </div>
+
+      <div class="panel" style="padding:14px 16px;margin-top:12px;background:rgba(4,8,20,.55)" id="quote-box">
+        <div style="color:var(--faint);font-size:0.88rem">Loading market data…</div>
+      </div>
+
+      <button class="btn primary block" id="preview-btn" disabled style="margin-top:14px">
+        Preview order
+        <div style="font-size:0.72rem;font-weight:500;opacity:.85;margin-top:2px">Phase 2: on-chain settlement — v1 creates no transaction</div>
+      </button>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:18px">
+        <h3 style="font-family:var(--font-display);margin:0 0 10px">👨‍🚀 How quotes work</h3>
+        <p style="color:var(--muted);font-size:0.88rem;line-height:1.65;margin:0 0 10px">
+          Spectrum's public API publishes prices and volumes per market — <em>not</em> pool reserves.
+          AstroErg estimates reserves as <strong style="color:var(--text)">~10× reported volume, split 50/50 by value at the spot price</strong>,
+          then runs your trade through <strong style="color:var(--text)">x·y=k</strong> with the 0.5% Spectrum-style pool fee.
+          Price impact is computed against that estimated depth, so treat it as indicative.
+          Token→token routes go via ERG in two legs and say so.
+        </p>
+        <a href="docs.html" style="font-size:0.86rem">Read the full methodology →</a>
+      </div>
+
+      <div class="fee-card">
+        <h3 style="font-family:var(--font-display);margin:0 0 6px">🪙 Protocol fee — 0.25%</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin:0;line-height:1.6">
+          Shown on every quote as a line item. <strong style="color:var(--amber)">Not collected in v1</strong> —
+          it goes live with Phase 2 settlement, paid to the protocol fee recipient:
+        </p>
+        <div class="wallet-line">
+          <span style="color:var(--faint);font-size:0.68rem;letter-spacing:.08em">PROTOCOL FEE RECIPIENT</span>
+          <span data-fee-wallet></span>
+          <button class="copy-btn" data-copy-fee-wallet>copy</button>
+        </div>
+      </div>
+
+      <div class="panel astro-float" style="text-align:center;overflow:hidden">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" aria-hidden="true" style="margin:6px auto;display:block">
+          <circle cx="60" cy="52" r="34" fill="rgba(125,211,252,.08)" stroke="#7dd3fc" stroke-width="3"/>
+          <path d="M38 52a22 22 0 0 1 44 0v5a22 13 0 0 1-44 0z" fill="#0b1226" stroke="#7dd3fc" stroke-width="2.5"/>
+          <ellipse cx="70" cy="47" rx="5" ry="7" fill="#7dd3fc" opacity=".7" transform="rotate(15 70 47)"/>
+          <rect x="30" y="88" width="60" height="9" rx="4.5" fill="#a78bfa" opacity=".55"/>
+          <rect x="52" y="97" width="16" height="12" rx="3" fill="#ff6b1a" opacity=".8"/>
+          <circle cx="60" cy="14" r="3.5" fill="#ff6b1a"/>
+          <line x1="60" y="17.5" x2="60" y="24" stroke="#ff6b1a" stroke-width="2"/>
+        </svg>
+        <p style="color:var(--muted);font-size:0.85rem;margin:8px 0 0;line-height:1.6">
+          <strong style="color:var(--text)">Mission log:</strong> quotes are computed locally in your browser
+          from public data. No wallet signature is ever requested in v1.
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- order preview modal -->
+<div class="modal-backdrop" id="preview-modal" role="dialog" aria-modal="true" aria-label="Order preview">
+  <div class="panel modal">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>Order preview</h2>
+      <span class="pill phase2">Phase 2 settlement</span>
+    </div>
+    <p style="color:var(--muted);font-size:0.84rem;margin:6px 0 0">Exact figures for the quote above. <strong style="color:var(--amber)">v1 does not settle on-chain — no transaction is created, signed, or submitted.</strong></p>
+    <div class="big-swap">
+      <div class="in" id="pv-in">—</div>
+      <div class="arrow">▼</div>
+      <div class="out" id="pv-out">—</div>
+    </div>
+    <div id="pv-rows"></div>
+    <button class="btn block" disabled style="margin-top:14px" title="On-chain settlement ships in Phase 2 (contract fork → testnet shakedown → community review). This button stays disabled until then.">
+      Settle on-chain — disabled in v1
+    </button>
+    <button class="btn ghost block" id="modal-close" style="margin-top:8px">Close preview</button>
+  </div>
+</div>
+
+<footer class="site">
+  <div class="footer-inner">
+    <div>
+      <h4>AstroErg</h4>
+      <p>Ergo-native DEX quote terminal. v1: indicative quotes from public market data. Phase 2: on-chain settlement via a fork of the CC0 Spectrum contracts. Nothing here is audited.</p>
+    </div>
+    <div>
+      <h4>Protocol</h4>
+      <ul>
+        <li><a href="docs.html">How it works &amp; fees</a></li>
+        <li><a href="pools.html">Pools</a></li>
+        <li><a href="tokens.html">Tokens</a></li>
+        <li><a href="https://github.com/Kshot3000/MY-ERGO-DEX" target="_blank" rel="noopener">GitHub ↗</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Protocol fee recipient</h4>
+      <p style="font-family:var(--font-mono);font-size:0.74rem;word-break:break-all"><span data-fee-wallet></span></p>
+      <button class="btn small ghost" data-copy-fee-wallet>Copy address</button>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener">@kshot9000</a> ·
+    market data: Spectrum Finance public API (+ baked snapshots) ·
+    chain data: Ergo explorer · not financial advice
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/aelib.js?v=0.2.0"></script>
+<script src="js/app.js?v=0.2.0"></script>
+<script src="js/fx-starfield.js?v=0.2.0"></script>
+<script src="js/swap.js?v=0.2.0"></script>
+</body>
+</html>

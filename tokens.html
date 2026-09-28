@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokens — AstroErg</title>
+<meta name="description" content="AstroErg token directory: Ergo-native (EIP-4) tokens ranked by reported DEX volume, with explorer link-outs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=0.2.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='21' fill='%2308121d' stroke='%237dd3fc' stroke-width='3'/%3E%3Cpath d='M15 26a9 9 0 0 1 18 0v3a9 6 0 0 1-18 0z' fill='%237dd3fc' opacity='.85'/%3E%3C/svg%3E">
+</head>
+<body data-page="tokens">
+<canvas id="starfield"></canvas>
+<div class="nebula"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <svg width="38" height="38" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <circle cx="24" cy="24" r="20" fill="rgba(125,211,252,.10)" stroke="#7dd3fc" stroke-width="2.5"/>
+        <path d="M15 25a9 9 0 0 1 18 0v2.5a9 5.5 0 0 1-18 0z" fill="#0b1226" stroke="#7dd3fc" stroke-width="2"/>
+        <ellipse cx="28.5" cy="22.5" rx="2.6" ry="3.4" fill="#7dd3fc" opacity=".75" transform="rotate(18 28.5 22.5)"/>
+        <rect x="9" y="35" width="30" height="5" rx="2.5" fill="#a78bfa" opacity=".55"/>
+        <circle cx="24" cy="6.5" r="2" fill="#ff6b1a"/>
+      </svg>
+      <span class="brand-name">AstroErg</span>
+      <span class="brand-tag">v1 · QUOTE TERMINAL</span>
+    </div>
+    <nav class="mainnav">
+      <a href="index.html" data-nav="swap">Swap</a>
+      <a href="pools.html" data-nav="pools">Pools</a>
+      <a href="tokens.html" data-nav="tokens">Tokens</a>
+      <a href="docs.html" data-nav="docs">Docs</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="src-badge loading" id="src-badge">○ loading…</span>
+      <button class="btn small" id="wallet-btn">Connect Nautilus</button>
+      <span class="wallet-chip" id="wallet-chip"><span>🛰</span><span class="addr"></span><span class="bal"></span></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="page-head">
+    <h1>Token directory</h1>
+    <p>Ergo-native (EIP-4) tokens ranked by reported DEX volume. Prices derive from the loaded market data (live when reachable, else the baked snapshot). <span id="token-count">–</span> tokens listed.</p>
+    <div class="banner info">
+      <strong>Watch out for lookalikes.</strong> Token IDs are the source of truth on Ergo — tickers can be reused by anyone.
+      Always verify the full 64-hex token ID before trusting a token. (Example: a second, unofficial "SigRSV" token ID exists in the explorer;
+      AstroErg uses the canonical <span class="tid">003bd19d…949285d0</span> seen in DEX markets.)
+    </div>
+    <input class="search-input" id="token-search" placeholder="🔭 Search tokens — ticker, name, or token ID…" aria-label="Search tokens">
+  </div>
+
+  <div class="table-wrap">
+    <table class="data" id="tokens-table">
+      <thead>
+        <tr>
+          <th>Token</th>
+          <th>Token ID</th>
+          <th class="num">Decimals</th>
+          <th class="num">Price (ERG)</th>
+          <th class="num">Volume (ERG)</th>
+          <th>Explorer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" style="color:var(--faint)">Loading token data…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <div>
+      <h4>AstroErg</h4>
+      <p>Ergo-native DEX quote terminal. v1: indicative quotes from public market data. Phase 2: on-chain settlement via a fork of the CC0 Spectrum contracts. Nothing here is audited.</p>
+    </div>
+    <div>
+      <h4>Protocol</h4>
+      <ul>
+        <li><a href="docs.html">How it works &amp; fees</a></li>
+        <li><a href="index.html">Swap</a></li>
+        <li><a href="pools.html">Pools</a></li>
+        <li><a href="https://github.com/Kshot3000/MY-ERGO-DEX" target="_blank" rel="noopener">GitHub ↗</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Protocol fee recipient</h4>
+      <p style="font-family:var(--font-mono);font-size:0.74rem;word-break:break-all"><span data-fee-wallet></span></p>
+      <button class="btn small ghost" data-copy-fee-wallet>Copy address</button>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener">@kshot9000</a> ·
+    market data: Spectrum Finance public API (+ baked snapshots) ·
+    chain data: Ergo explorer · not financial advice
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/aelib.js?v=0.2.0"></script>
+<script src="js/app.js?v=0.2.0"></script>
+<script src="js/fx-starfield.js?v=0.2.0"></script>
+<script src="js/tokens.js?v=0.2.0"></script>
+</body>
+</html>

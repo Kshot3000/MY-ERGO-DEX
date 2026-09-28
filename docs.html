@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docs — AstroErg</title>
+<meta name="description" content="AstroErg docs: how quotes work, fee structure, reserve-estimation methodology, roadmap, and risks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=0.2.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='21' fill='%2308121d' stroke='%237dd3fc' stroke-width='3'/%3E%3Cpath d='M15 26a9 9 0 0 1 18 0v3a9 6 0 0 1-18 0z' fill='%237dd3fc' opacity='.85'/%3E%3C/svg%3E">
+</head>
+<body data-page="docs">
+<canvas id="starfield"></canvas>
+<div class="nebula"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <svg width="38" height="38" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <circle cx="24" cy="24" r="20" fill="rgba(125,211,252,.10)" stroke="#7dd3fc" stroke-width="2.5"/>
+        <path d="M15 25a9 9 0 0 1 18 0v2.5a9 5.5 0 0 1-18 0z" fill="#0b1226" stroke="#7dd3fc" stroke-width="2"/>
+        <ellipse cx="28.5" cy="22.5" rx="2.6" ry="3.4" fill="#7dd3fc" opacity=".75" transform="rotate(18 28.5 22.5)"/>
+        <rect x="9" y="35" width="30" height="5" rx="2.5" fill="#a78bfa" opacity=".55"/>
+        <circle cx="24" cy="6.5" r="2" fill="#ff6b1a"/>
+      </svg>
+      <span class="brand-name">AstroErg</span>
+      <span class="brand-tag">v1 · QUOTE TERMINAL</span>
+    </div>
+    <nav class="mainnav">
+      <a href="index.html" data-nav="swap">Swap</a>
+      <a href="pools.html" data-nav="pools">Pools</a>
+      <a href="tokens.html" data-nav="tokens">Tokens</a>
+      <a href="docs.html" data-nav="docs">Docs</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="src-badge loading" id="src-badge">○ loading…</span>
+      <button class="btn small" id="wallet-btn">Connect Nautilus</button>
+      <span class="wallet-chip" id="wallet-chip"><span>🛰</span><span class="addr"></span><span class="bal"></span></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap docs-body">
+  <div class="page-head">
+    <h1>Documentation</h1>
+    <p>How AstroErg works, what it costs, how quotes are estimated, and what's still on the launchpad.</p>
+  </div>
+
+  <div class="banner">
+    <strong>Honest status.</strong> AstroErg v1 is a <strong>quote terminal</strong>: it computes indicative swap quotes
+    from public market data entirely in your browser. It does <strong>not</strong> create, sign, or submit transactions,
+    hold custody of anything, or move any funds. On-chain settlement is <strong>Phase 2</strong>.
+    Nothing in this project has been audited — and there is no formal audit industry in the Ergo ecosystem,
+    so we will never claim otherwise.
+  </div>
+
+  <h2>How it works</h2>
+  <p>
+    AstroErg is a static site (no servers, no build step). When you open it, the app tries to fetch the public
+    <code>https://api.spectrum.fi/v1/price-tracking/markets</code> endpoint — 393 markets at last check, no API key —
+    and otherwise falls back to a baked snapshot in <code>data/markets.json</code> (pulled at build time with
+    <code>scripts/refresh-data.sh</code>). The header badge tells you which one you're seeing, with the snapshot timestamp.
+  </p>
+  <p>
+    Why the snapshot at all? Neither <code>api.spectrum.fi</code> nor <code>api.ergoplatform.com</code> sends
+    <code>Access-Control-Allow-Origin</code> headers, so browsers refuse direct <code>fetch()</code> calls (CORS).
+    The snapshot is the honest workaround: same data, pulled minutes before deploy, visibly timestamped.
+  </p>
+  <p>
+    Quotes run the classic constant-product AMM math (<strong>x·y=k</strong>) in integer arithmetic
+    (BigInt raw units — ERG has 9 decimals, i.e. nanoErg), with the 0.5% Spectrum-style pool fee kept in reserves.
+    Token→token pairs route through ERG in two legs and the UI says so.
+  </p>
+
+  <h2 id="methodology">Reserve-estimation methodology</h2>
+  <p>
+    Spectrum's price-tracking API publishes <code>lastPrice</code> and per-side volumes per market — it does
+    <strong>not</strong> publish pool reserves. Since a quote engine needs reserves, AstroErg <em>estimates</em> them:
+  </p>
+  <pre>1. Spot price p = lastPrice
+     (verified 2026-09-28: human units of QUOTE per human unit of BASE,
+      e.g. ERG/SigUSD ≈ 0.305 SigUSD per ERG while ERG traded ≈ $0.32)
+2. Reported volume V (quote-denominated) = max(baseVol × p, quoteVol)
+     — the API does not document the volume window; we label it "reported"
+3. Assumed depth D = 10 × V            ← heuristic, the key assumption
+4. Reserves: R_quote = D / 2,  R_base = R_quote / p
+     (50/50 by value at the spot price, stored as raw integer units)</pre>
+  <p>
+    The <strong>10× multiplier is a guess</strong>: real pools are typically a small multiple of daily volume deep,
+    but we cannot observe reserves, so price-impact figures scale with this guess. Every reserve figure in the UI
+    carries an <span class="pill estimated">estimated</span> label, and the quote panel says "depth: estimated".
+    Re-pull snapshots any time with <code>scripts/refresh-data.sh</code>.
+  </p>
+
+  <h2>Fee structure</h2>
+  <div class="fee-card">
+    <h3 style="margin-top:0">Protocol fee — 0.25% of swap input</h3>
+    <p>
+      Every quote shows the 0.25% protocol fee as a line item. It is <strong>not collected in v1</strong>
+      (there is no settlement to take it from) — it goes live with Phase 2 settlement, paid to:
+    </p>
+    <div class="wallet-line">
+      <span style="color:var(--faint);font-size:0.68rem;letter-spacing:.08em">PROTOCOL FEE RECIPIENT</span>
+      <span data-fee-wallet></span>
+      <button class="copy-btn" data-copy-fee-wallet>copy</button>
+    </div>
+  </div>
+  <div class="fee-card" style="background:linear-gradient(180deg, rgba(125,211,252,.06), transparent)">
+    <h3 style="margin-top:0">Pool fee — 0.5%, accrues to LPs</h3>
+    <p>
+      Spectrum-style pools keep a 0.5% fee inside reserves on every swap, which accrues to liquidity providers
+      as their share of the pool grows. AstroErg's quote engine applies this fee exactly that way —
+      it reduces your output and stays in the (estimated) reserves.
+    </p>
+  </div>
+
+  <h2>Wallet connection</h2>
+  <p>
+    The <strong>Connect Nautilus</strong> button uses the EIP-12 dApp connector
+    (<code>window.ergoConnector.nautilus</code>) to request your change address and ERG balance — read-only,
+    display-only. It is implemented from public docs and has <strong>not</strong> been tested against a live wallet.
+    If Nautilus isn't installed, or the connection fails, the app degrades gracefully and every quote feature keeps working.
+    v1 never asks for a signature and never builds a transaction.
+  </p>
+
+  <h2>Roadmap</h2>
+  <div class="phase done">
+    <h3>✅ Phase 1 — Quote terminal (this site)</h3>
+    <p>Static front-end, public market data with snapshot fallback, x·y=k quote engine with honest reserve estimates, token directory, docs. No contracts, no custody, no fake trades.</p>
+  </div>
+  <div class="phase now">
+    <h3>🚧 Phase 2 — On-chain settlement</h3>
+    <p>
+      Fork the <strong>CC0-licensed</strong> Spectrum Finance contracts (<code>spectrum-finance/ergo-dex</code>),
+      shake them down on <strong>testnet</strong>, put them through <strong>community review</strong>,
+      then launch on mainnet with <strong>capped liquidity</strong>. Only then do the swap-settle and add/remove-liquidity
+      buttons light up — and the 0.25% protocol fee starts flowing to the recipient above.
+    </p>
+  </div>
+  <div class="phase">
+    <h3>🔭 Phase 3 — Beyond</h3>
+    <p>Limit orders, deeper routing across all pairs, and whatever the community asks for — after Phase 2 proves itself.</p>
+  </div>
+
+  <h2>Risks &amp; honest caveats</h2>
+  <ul>
+    <li><strong>Unaudited code.</strong> Nothing here — front-end or future contracts — is audited. There is no formal audit industry in Ergo; we rely on open code + community review and will say so, always.</li>
+    <li><strong>MEV / front-running.</strong> Ergo has public mempools; visible swap intents can be front-run by bots. Design mitigations (slippage limits, private relays) are Phase 2 work.</li>
+    <li><strong>Pool-box contention.</strong> Each AMM pool is a single UTXO; concurrent swaps contend for it and some transactions will need retries. Expect this UX wrinkle in Phase 2.</li>
+    <li><strong>Executor-order dependency.</strong> Permissionless off-chain executors decide transaction ordering for order-book style settlement; understand the trust model before using it.</li>
+    <li><strong>Estimated depth.</strong> v1 quotes use estimated reserves (see methodology). Real execution prices will differ — sometimes meaningfully on thin pairs.</li>
+    <li><strong>Token lookalikes.</strong> Anyone can mint a token with any ticker on Ergo. Verify 64-hex token IDs; AstroErg links every token to its explorer page.</li>
+  </ul>
+  <p style="color:var(--faint);font-size:0.85rem">Not financial advice. Software is provided as-is; verify everything on the explorer before trusting it.</p>
+
+  <h2>Data sources</h2>
+  <ul>
+    <li>Markets: <code>https://api.spectrum.fi/v1/price-tracking/markets</code> (Spectrum Finance, no key)</li>
+    <li>Token metadata: <code>https://api.ergoplatform.com/api/v1/tokens/&lt;id&gt;</code> (Ergo explorer)</li>
+    <li>Contracts (Phase 2 reference): <code>https://github.com/spectrum-finance/ergo-dex</code> (CC0)</li>
+    <li>Wallet: Nautilus via EIP-12 (<code>ergoConnector.nautilus</code>)</li>
+  </ul>
+</main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <div>
+      <h4>AstroErg</h4>
+      <p>Ergo-native DEX quote terminal. v1: indicative quotes from public market data. Phase 2: on-chain settlement via a fork of the CC0 Spectrum contracts. Nothing here is audited.</p>
+    </div>
+    <div>
+      <h4>Protocol</h4>
+      <ul>
+        <li><a href="index.html">Swap</a></li>
+        <li><a href="pools.html">Pools</a></li>
+        <li><a href="tokens.html">Tokens</a></li>
+        <li><a href="https://github.com/Kshot3000/MY-ERGO-DEX" target="_blank" rel="noopener">GitHub ↗</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Protocol fee recipient</h4>
+      <p style="font-family:var(--font-mono);font-size:0.74rem;word-break:break-all"><span data-fee-wallet></span></p>
+      <button class="btn small ghost" data-copy-fee-wallet>Copy address</button>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener">@kshot9000</a> ·
+    market data: Spectrum Finance public API (+ baked snapshots) ·
+    chain data: Ergo explorer · not financial advice
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/aelib.js?v=0.2.0"></script>
+<script src="js/app.js?v=0.2.0"></script>
+<script src="js/fx-starfield.js?v=0.2.0"></script>
+</body>
+</html>
