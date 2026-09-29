@@ -114,11 +114,11 @@ def main():
                 r_x = d_x / 2.0
                 r_erg = r_x / p_erg_per_x if p_erg_per_x else 0
                 reserves = {
-                    "erg": {"human": r_erg, "raw": int(r_erg * 10 ** 9)},
+                    "erg": {"human": r_erg, "raw": str(int(r_erg * 10 ** 9))},
                     "token": {
                         "tokenId": q,
                         "human": r_x,
-                        "raw": int(r_x * 10 ** qa["decimals"]),
+                        "raw": str(int(r_x * 10 ** qa["decimals"])),
                     },
                 }
             else:
@@ -129,11 +129,11 @@ def main():
                 r_erg = d_erg / 2.0
                 r_x = r_erg / p_x_per_erg if p_x_per_erg else 0
                 reserves = {
-                    "erg": {"human": r_erg, "raw": int(r_erg * 10 ** 9)},
+                    "erg": {"human": r_erg, "raw": str(int(r_erg * 10 ** 9))},
                     "token": {
                         "tokenId": b,
                         "human": r_x,
-                        "raw": int(r_x * 10 ** ba["decimals"]),
+                        "raw": str(int(r_x * 10 ** ba["decimals"])),
                     },
                 }
             pair["reserves"] = reserves

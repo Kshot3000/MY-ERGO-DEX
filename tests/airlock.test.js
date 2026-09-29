@@ -9,26 +9,39 @@ const path = require("node:path");
 const AELib = require("../js/aelib.js");
 
 const ERG = AELib.ERG_ID;
-const SIGUSD = "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04";
+const SIGUSD =
+  "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04";
 const FEE_WALLET = "9fcM5RWnAjmP4vx5bnW6yohB6H9bLq8sJbaPLHtwZLtQPB32Pvy";
 
 describe("token validation", () => {
   it("accepts the canonical 64-hex token IDs", () => {
     assert.ok(AELib.isValidTokenId(SIGUSD));
-    assert.ok(AELib.isValidTokenId("003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0")); // SigRSV
+    assert.ok(
+      AELib.isValidTokenId(
+        "003bd19d0187117f130b62e1bcab0939929ff5c7709f843c5c4dd158949285d0",
+      ),
+    ); // SigRSV
     assert.ok(AELib.isValidTokenId(ERG));
   });
   it("rejects malformed IDs", () => {
-    assert.ok(!AELib.isValidTokenId("03faf2cb"));                 // too short
-    assert.ok(!AELib.isValidTokenId("z".repeat(64)));             // non-hex
-    assert.ok(!AELib.isValidTokenId("03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf0")); // 63 chars
-    assert.ok(!AELib.isValidTokenId(""));                        // empty
-    assert.ok(!AELib.isValidTokenId(null));                       // null
+    assert.ok(!AELib.isValidTokenId("03faf2cb")); // too short
+    assert.ok(!AELib.isValidTokenId("z".repeat(64))); // non-hex
+    assert.ok(
+      !AELib.isValidTokenId(
+        "03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf0",
+      ),
+    ); // 63 chars
+    assert.ok(!AELib.isValidTokenId("")); // empty
+    assert.ok(!AELib.isValidTokenId(null)); // null
   });
   it("validates the protocol fee wallet as an Ergo P2PK address", () => {
     assert.ok(AELib.isValidErgoAddress(FEE_WALLET));
     assert.ok(!AELib.isValidErgoAddress("not-an-address"));
-    assert.ok(!AELib.isValidErgoAddress("8fcM5RWnAjmP4vx5bnW6yohB6H9bLq8sJbaPLHtwZLtQPB32Pvy")); // wrong prefix
+    assert.ok(
+      !AELib.isValidErgoAddress(
+        "8fcM5RWnAjmP4vx5bnW6yohB6H9bLq8sJbaPLHtwZLtQPB32Pvy",
+      ),
+    ); // wrong prefix
   });
 });
 
@@ -46,7 +59,7 @@ describe("amount formatting (ERG has 9 decimals)", () => {
     assert.equal(AELib.parseAmount("1.5", 9), 1500000000n);
     assert.equal(AELib.parseAmount("0.000000001", 9), 1n);
     assert.equal(AELib.parseAmount("1.1234567899", 9), 1123456789n); // truncated, not rounded
-    assert.equal(AELib.parseAmount("1,234.5", 9), 1234500000000n);   // commas ok
+    assert.equal(AELib.parseAmount("1,234.5", 9), 1234500000000n); // commas ok
   });
   it("round-trips", () => {
     for (const raw of [0n, 1n, 999999999n, 1000000000n, 123456789012345678n]) {
@@ -64,13 +77,15 @@ describe("amount formatting (ERG has 9 decimals)", () => {
 });
 
 describe("AMM quote engine (x*y=k)", () => {
-  const R_IN = 1_000_000n, R_OUT = 2_000_000n, AMT = 10_000n;
+  const R_IN = 1_000_000n,
+    R_OUT = 2_000_000n,
+    AMT = 10_000n;
 
   it("computes exact fee splits: 0.25% protocol, 0.5% pool", () => {
     const q = AELib.quoteExactIn(AMT, R_IN, R_OUT);
-    assert.equal(q.protocolFeeRaw, 25n);                       // 10000 * 25 / 10000
-    assert.equal(q.poolFeeRaw, 49n);                           // (10000-25) * 50 / 10000 = 49 (floored)
-    assert.equal(q.effectiveInRaw, AMT - 25n - 49n);           // 9926
+    assert.equal(q.protocolFeeRaw, 25n); // 10000 * 25 / 10000
+    assert.equal(q.poolFeeRaw, 49n); // (10000-25) * 50 / 10000 = 49 (floored)
+    assert.equal(q.effectiveInRaw, AMT - 25n - 49n); // 9926
     assert.equal(q.amountOutRaw, (R_OUT * 9926n) / (R_IN + 9926n));
   });
   it("never decreases k (constant-product invariant)", () => {
@@ -86,10 +101,24 @@ describe("AMM quote engine (x*y=k)", () => {
     assert.ok(q.amountOutRaw > 0n && q.amountOutRaw < R_OUT);
   });
   it("price impact grows with trade size and is tiny for dust", () => {
-    const dust = AELib.quoteExactIn(1000n, 1_000_000_000_000n, 1_000_000_000_000n);
-    const whale = AELib.quoteExactIn(500_000_000n, 1_000_000_000n, 1_000_000_000n);
-    assert.ok(dust.priceImpactBps < 50n, `dust impact=${dust.priceImpactBps}bps`);
-    assert.ok(whale.priceImpactBps > 1000n, "whale trade should move price >10%");
+    const dust = AELib.quoteExactIn(
+      1000n,
+      1_000_000_000_000n,
+      1_000_000_000_000n,
+    );
+    const whale = AELib.quoteExactIn(
+      500_000_000n,
+      1_000_000_000n,
+      1_000_000_000n,
+    );
+    assert.ok(
+      dust.priceImpactBps < 50n,
+      `dust impact=${dust.priceImpactBps}bps`,
+    );
+    assert.ok(
+      whale.priceImpactBps > 1000n,
+      "whale trade should move price >10%",
+    );
     assert.ok(whale.priceImpactBps > dust.priceImpactBps);
   });
   it("tiny trade executes near spot price (minus the 0.5% pool fee)", () => {
@@ -104,26 +133,59 @@ describe("AMM quote engine (x*y=k)", () => {
     assert.throws(() => AELib.quoteExactIn(AMT, R_IN, 0n));
   });
   it("applies slippage tolerance correctly", () => {
-    assert.equal(AELib.applySlippage(10000n, 50), 9950n);   // 0.5%
-    assert.equal(AELib.applySlippage(10000n, 100), 9900n);  // 1%
-    assert.equal(AELib.applySlippage(9999n, 50), 9949n);    // floors
-    assert.throws(() => AELib.applySlippage(100n, 10000));  // 100% invalid
+    assert.equal(AELib.applySlippage(10000n, 50), 9950n); // 0.5%
+    assert.equal(AELib.applySlippage(10000n, 100), 9900n); // 1%
+    assert.equal(AELib.applySlippage(9999n, 50), 9949n); // floors
+    assert.throws(() => AELib.applySlippage(100n, 10000)); // 100% invalid
   });
   it("two-leg routing equals sequential single-leg quotes", () => {
-    const leg1 = { reserveInRaw: 1_000_000n, reserveOutRaw: 3_000_000n };  // X -> ERG
-    const leg2 = { reserveInRaw: 3_000_000n, reserveOutRaw: 9_000_000n };  // ERG -> Y
+    const leg1 = { reserveInRaw: 1_000_000n, reserveOutRaw: 3_000_000n }; // X -> ERG
+    const leg2 = { reserveInRaw: 3_000_000n, reserveOutRaw: 9_000_000n }; // ERG -> Y
     const two = AELib.quoteTwoLeg(50_000n, leg1, leg2);
-    const s1 = AELib.quoteExactIn(50_000n, leg1.reserveInRaw, leg1.reserveOutRaw);
-    const s2 = AELib.quoteExactIn(s1.amountOutRaw, leg2.reserveInRaw, leg2.reserveOutRaw);
+    const s1 = AELib.quoteExactIn(
+      50_000n,
+      leg1.reserveInRaw,
+      leg1.reserveOutRaw,
+    );
+    const s2 = AELib.quoteExactIn(
+      s1.amountOutRaw,
+      leg2.reserveInRaw,
+      leg2.reserveOutRaw,
+      0,
+    );
     assert.equal(two.amountOutRaw, s2.amountOutRaw);
     assert.equal(two.protocolFeeRaw, s1.protocolFeeRaw); // protocol fee taken once
-    assert.equal(two.poolFeeRaw, s1.poolFeeRaw + s2.poolFeeRaw);
+    assert.equal(two.legs[1].protocolFeeRaw, 0n);
+    assert.equal(two.legs[0].protocolFeeRaw, 125n); // 0.25% of the original 50,000 units
+    assert.deepEqual(two.poolFeesRaw, [s1.poolFeeRaw, s2.poolFeeRaw]); // different denominations
+    assert.ok(two.priceImpactBps >= 0n && two.priceImpactBps <= 10000n);
+  });
+
+  it("keeps compound impact bounded and rejects a zero-output first leg", () => {
+    const two = AELib.quoteTwoLeg(
+      900000n,
+      { reserveInRaw: 10000n, reserveOutRaw: 100000n },
+      { reserveInRaw: 1000n, reserveOutRaw: 100000n },
+    );
+    assert.ok(two.priceImpactBps <= 10000n);
+    assert.throws(
+      () =>
+        AELib.quoteTwoLeg(
+          1n,
+          { reserveInRaw: 1000000n, reserveOutRaw: 1n },
+          { reserveInRaw: 1000n, reserveOutRaw: 1000n },
+        ),
+      /too small/,
+    );
   });
 });
 
 describe("market data processing (real-response fixture)", () => {
   const raw = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "fixtures", "markets-sample.json"), "utf8")
+    fs.readFileSync(
+      path.join(__dirname, "fixtures", "markets-sample.json"),
+      "utf8",
+    ),
   );
 
   it("loads the real fixture (4 valid + 1 malformed market)", () => {
@@ -133,11 +195,15 @@ describe("market data processing (real-response fixture)", () => {
   it("dedupes markets by token pair, keeping the highest-volume one", () => {
     const { pairs } = AELib.processMarkets(raw, "2026-09-28T00:00:00Z");
     const sigPairs = pairs.filter(
-      (p) => new Set([p.base.tokenId, p.quote.tokenId]).has(SIGUSD) &&
-             new Set([p.base.tokenId, p.quote.tokenId]).has(ERG)
+      (p) =>
+        new Set([p.base.tokenId, p.quote.tokenId]).has(SIGUSD) &&
+        new Set([p.base.tokenId, p.quote.tokenId]).has(ERG),
     );
     assert.equal(sigPairs.length, 1); // two ERG/SigUSD markets -> one pair
-    assert.ok(sigPairs[0].volume.base > 1_000_000, "kept the big pool, not the dust one");
+    assert.ok(
+      sigPairs[0].volume.base > 1_000_000,
+      "kept the big pool, not the dust one",
+    );
   });
 
   it("skips malformed entries without throwing", () => {
@@ -181,7 +247,11 @@ describe("market data processing (real-response fixture)", () => {
     const { pair } = AELib.findErgPair(pairs, SIGUSD);
     const r = pair.reserves;
     // 1 ERG -> SigUSD
-    const q = AELib.quoteExactIn(1_000_000_000n, BigInt(r.erg.raw), BigInt(r.token.raw));
+    const q = AELib.quoteExactIn(
+      1_000_000_000n,
+      BigInt(r.erg.raw),
+      BigInt(r.token.raw),
+    );
     assert.ok(q.amountOutRaw > 0n);
     // ~0.3 SigUSD per ERG at fixture prices (2 decimals -> ~30 raw units)
     const outHuman = Number(q.amountOutRaw) / 100;

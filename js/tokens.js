@@ -1,101 +1,159 @@
-/* ============================================================
-   Airlock tokens page — js/tokens.js (v0.2.0)
-   Token directory: metadata from baked data/tokens.json, prices derived
-   from the loaded pairs (live when available, else snapshot).
-   ============================================================ */
+/* Token directory with full-ID search, explorer links and quote deep links. */
 (function () {
   "use strict";
-
-  // price of token in ERG, from any ERG pair
-  function priceVsErg(pairs, tokenId) {
-    if (tokenId === AELib.ERG_ID) return 1;
-    for (var i = 0; i < pairs.length; i++) {
-      var p = pairs[i], price = p.lastPrice;
-      if (!price || price <= 0) continue;
-      if (p.base.tokenId === tokenId && p.quote.tokenId === AELib.ERG_ID) return price;       // ERG per base
-      if (p.quote.tokenId === tokenId && p.base.tokenId === AELib.ERG_ID) return 1 / price;   // ERG per quote
-    }
-    return null;
+  var A = AstroApp,
+    page = 0,
+    pageSize = 15,
+    filter = "all";
+  function el(id) {
+    return document.getElementById(id);
   }
-
-  function ergVolume(pairs, tokenId) {
-    var v = 0;
-    pairs.forEach(function (p) {
-      var price = p.lastPrice;
-      if (p.base.tokenId === tokenId) {
-        v += (p.quote.tokenId === AELib.ERG_ID && price) ? p.volume.base * price : 0;
-      }
-      if (p.quote.tokenId === tokenId) {
-        v += (p.base.tokenId === AELib.ERG_ID && price) ? p.volume.quote / price : 0;
-      }
-    });
-    return v;
-  }
-
-  function fmtN(n) {
-    if (n == null || !isFinite(n)) return "—";
-    if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
-    if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
-    if (n >= 1) return n.toFixed(2);
-    return n.toPrecision(3);
-  }
-
-  function render(state) {
-    var q = (document.getElementById("token-search").value || "").toLowerCase();
-    var metas = Object.keys(state.tokenMeta).map(function (id) { return state.tokenMeta[id]; });
-    // include any pair tokens missing from metadata
-    var seen = {};
-    metas.forEach(function (m) { seen[m.tokenId] = true; });
-    state.pairs.forEach(function (p) {
-      [p.base, p.quote].forEach(function (a) {
-        if (!seen[a.tokenId]) {
-          seen[a.tokenId] = true;
-          metas.push({ tokenId: a.tokenId, ticker: a.ticker, name: a.ticker, decimals: a.decimals, description: "" });
-        }
+  function render() {
+    A.renderStats();
+    var q = el("token-search").value.trim().toLowerCase(),
+      sort = el("sort-by").value;
+    var rows = A.allTokens()
+      .map(function (t) {
+        return {
+          meta: t,
+          price: A.priceVsErg(t.tokenId),
+          quotable:
+            t.tokenId === AELib.ERG_ID ||
+            !!AELib.findErgPair(A.state.pairs, t.tokenId),
+          volume: A.state.pairs.reduce(function (v, p) {
+            return (
+              v +
+              (p.base.tokenId === t.tokenId || p.quote.tokenId === t.tokenId
+                ? A.ergVolume(p)
+                : 0)
+            );
+          }, 0),
+        };
+      })
+      .filter(function (r) {
+        return (
+          (filter !== "quotable" || r.quotable) &&
+          (!q ||
+            (
+              A.tokenLabel(r.meta.tokenId) +
+              " " +
+              A.tokenName(r.meta.tokenId) +
+              " " +
+              r.meta.tokenId
+            )
+              .toLowerCase()
+              .includes(q))
+        );
       });
+    rows.sort(function (a, b) {
+      if (sort === "name")
+        return A.tokenLabel(a.meta.tokenId).localeCompare(
+          A.tokenLabel(b.meta.tokenId),
+        );
+      if (sort === "price") return (b.price || 0) - (a.price || 0);
+      return b.volume - a.volume;
     });
-
-    var rows = metas.map(function (m) {
-      return {
-        meta: m,
-        price: priceVsErg(state.pairs, m.tokenId),
-        vol: ergVolume(state.pairs, m.tokenId),
-      };
-    }).filter(function (r) {
-      if (!q) return true;
-      return (r.meta.ticker + " " + r.meta.name + " " + r.meta.tokenId).toLowerCase().indexOf(q) >= 0;
-    }).sort(function (a, b) { return b.vol - a.vol; });
-
-    var html = "";
-    rows.forEach(function (r) {
-      var m = r.meta;
-      var isErg = m.tokenId === AELib.ERG_ID;
-      var explorer = isErg
-        ? "https://explorer.ergoplatform.com/"
-        : "https://explorer.ergoplatform.com/en/token/" + m.tokenId;
-      html += "<tr>" +
-        '<td><span class="ticker">' + AstroApp.esc(m.ticker) + '</span><br><span style="color:var(--faint);font-size:0.76rem">' + AstroApp.esc(m.name || "") + "</span></td>" +
-        '<td><span class="tid">' + AstroApp.esc(isErg ? "native (64 zeros)" : AELib.truncateId(m.tokenId)) + "</span>" +
-        (isErg ? "" : ' <button class="copy-btn" data-copy="' + AstroApp.esc(m.tokenId) + '" data-copy-label="Token ID">copy</button>') + "</td>" +
-        '<td class="num">' + m.decimals + "</td>" +
-        '<td class="num">' + (r.price == null ? "—" : r.price < 0.01 ? r.price.toExponential(2) : r.price.toFixed(4)) + "</td>" +
-        '<td class="num">' + fmtN(r.vol) + "</td>" +
-        '<td><a href="' + explorer + '" target="_blank" rel="noopener">explorer ↗</a></td>' +
-        "</tr>";
-    });
-    document.querySelector("#tokens-table tbody").innerHTML = html ||
-      '<tr><td colspan="6" style="color:var(--faint)">No tokens match.</td></tr>';
-    document.getElementById("token-count").textContent = rows.length;
-    AstroApp.bindCopyButtons();
+    var pages = Math.max(1, Math.ceil(rows.length / pageSize));
+    page = Math.min(page, pages - 1);
+    var start = page * pageSize,
+      slice = rows.slice(start, start + pageSize);
+    el("token-count").textContent = rows.length.toLocaleString();
+    el("tokens-table").querySelector("tbody").innerHTML = slice.length
+      ? slice
+          .map(function (r) {
+            var t = r.meta,
+              id = t.tokenId,
+              isErg = id === AELib.ERG_ID,
+              explorer = isErg
+                ? "https://explorer.ergoplatform.com/"
+                : "https://explorer.ergoplatform.com/en/token/" + id;
+            return (
+              '<tr><td><div class="asset-cell">' +
+              A.tokenAvatar(id) +
+              "<span><strong>" +
+              A.esc(A.tokenLabel(id)) +
+              "</strong><small>" +
+              A.esc(A.tokenName(id)) +
+              "</small></span></div></td><td>" +
+              A.compact(r.price) +
+              "</td><td>" +
+              (r.volume ? A.compact(r.volume) : "—") +
+              '</td><td><span class="tid" title="' +
+              id +
+              '">' +
+              (isErg ? "Native ERG" : AELib.truncateId(id, 6)) +
+              "</span> " +
+              (!isErg
+                ? '<button class="copy-btn" data-copy="' +
+                  id +
+                  '" data-copy-label="Token ID" aria-label="Copy ' +
+                  A.esc(A.tokenLabel(id)) +
+                  ' token ID">' +
+                  A.icon("copy") +
+                  "</button>"
+                : "") +
+              '<span class="cell-note">' +
+              A.tokenDecimals(id) +
+              " decimals</span></td><td>" +
+              (r.quotable
+                ? '<a class="quote-link" href="index.html?from=' +
+                  id +
+                  (isErg ? "" : "&amp;to=" + AELib.ERG_ID) +
+                  '">Preview</a> &nbsp; '
+                : "") +
+              '<a class="quote-link" href="' +
+              explorer +
+              '" target="_blank" rel="noopener noreferrer" aria-label="View ' +
+              A.esc(A.tokenLabel(id)) +
+              ' on Ergo explorer">' +
+              A.icon("external") +
+              "</a></td></tr>"
+            );
+          })
+          .join("")
+      : '<tr><td colspan="5"><div class="empty-state"><strong>No matching tokens</strong>Try a different name or paste the full token ID.</div></td></tr>';
+    el("page-info").textContent = rows.length
+      ? start +
+        1 +
+        "–" +
+        Math.min(start + pageSize, rows.length) +
+        " of " +
+        rows.length +
+        " tokens"
+      : "0 tokens";
+    el("prev-page").disabled = page === 0;
+    el("next-page").disabled = page >= pages - 1;
+    A.bindCopyButtons();
   }
-
   document.addEventListener("DOMContentLoaded", function () {
-    AstroApp.initData(function (state) {
-      render(state);
-      document.getElementById("token-search").addEventListener("input", function () {
-        render(state);
-      });
+    el("token-search").oninput = function () {
+      page = 0;
+      render();
+    };
+    el("sort-by").onchange = function () {
+      page = 0;
+      render();
+    };
+    A.$all("[data-filter]").forEach(function (b) {
+      b.onclick = function () {
+        filter = b.dataset.filter;
+        page = 0;
+        A.$all("[data-filter]").forEach(function (x) {
+          var on = x === b;
+          x.classList.toggle("on", on);
+          x.setAttribute("aria-pressed", String(on));
+        });
+        render();
+      };
     });
+    el("prev-page").onclick = function () {
+      page--;
+      render();
+    };
+    el("next-page").onclick = function () {
+      page++;
+      render();
+    };
+    A.initData(render);
   });
 })();

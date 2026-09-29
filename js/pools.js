@@ -1,110 +1,247 @@
-/* ============================================================
-   Airlock pools page — js/pools.js (v0.2.0)
-   Table of all unique pairs from market data. Reserve figures are
-   ESTIMATES (labeled) for ERG pairs; non-ERG pairs show n/a.
-   Add/remove liquidity buttons are disabled + labeled Phase 2.
-   ============================================================ */
+/* Searchable and paginated market browser. All reserves are estimates. */
 (function () {
   "use strict";
-
-  function fmtUsd(n) {
-    if (n == null || !isFinite(n)) return "—";
-    if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
-    if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
-    return n.toFixed(2);
+  var A = AstroApp,
+    page = 0,
+    pageSize = 15,
+    filter = "all",
+    expanded = new Set();
+  function el(id) {
+    return document.getElementById(id);
   }
-
-  function pairKey(p) {
-    return [p.base.tokenId, p.quote.tokenId].sort().join("_");
+  function copy(id) {
+    return (
+      '<button class="copy-btn" data-copy="' +
+      A.esc(id) +
+      '" data-copy-label="Token ID" aria-label="Copy token ID">' +
+      A.icon("copy") +
+      "</button>"
+    );
   }
-
-  function render(pairs) {
-    var q = (document.getElementById("pool-search").value || "").toLowerCase();
-    // sort: ERG volume desc
-    var sorted = pairs.slice().sort(function (a, b) {
-      return ergVol(b) - ergVol(a);
-    });
-    var html = "";
-    var shown = 0;
-    sorted.forEach(function (p, idx) {
-      var label = (p.base.ticker + "/" + p.quote.ticker).toLowerCase();
-      if (q && label.indexOf(q) < 0) return;
-      shown++;
-      var price = p.lastPrice != null ? Number(p.lastPrice).toPrecision(6) : "—";
-      var vol = ergVol(p);
-      var reservesCell;
-      if (p.reserves) {
-        reservesCell =
-          '<span class="num">' + fmtUsd(p.reserves.erg.human) + " ERG</span> + " +
-          '<span class="num">' + fmtUsd(p.reserves.token.human) + " " + AstroApp.esc(AstroApp.tokenLabel(p.reserves.token.tokenId)) + "</span> " +
-          '<span class="pill estimated">estimated</span>';
-      } else {
-        reservesCell = '<span style="color:var(--faint)">n/a — not published</span>';
-      }
-      var rowId = "pr" + idx;
-      html += '<tr class="row-main" data-row="' + rowId + '">' +
-        '<td><span class="ticker">' + AstroApp.esc(p.base.ticker) + "/" + AstroApp.esc(p.quote.ticker) + "</span></td>" +
-        '<td class="num">' + price + ' <span style="color:var(--faint);font-size:0.72rem">' + AstroApp.esc(p.quote.ticker) + " per " + AstroApp.esc(p.base.ticker) + "</span></td>" +
-        '<td class="num">' + fmtUsd(vol) + ' <span style="color:var(--faint);font-size:0.72rem">ERG</span></td>' +
-        '<td>' + reservesCell + "</td>" +
-        '<td><button class="btn small" disabled title="Phase 2: adding liquidity needs the on-chain contracts (fork of the CC0 Spectrum contracts + testnet shakedown + community review). Not available in v1.">+ Add <span class="pill phase2">P2</span></button> ' +
-        '<button class="btn small ghost" disabled title="Phase 2: removing liquidity needs the on-chain contracts. Not available in v1.">− Remove <span class="pill phase2">P2</span></button></td>' +
-        "</tr>";
-      html += '<tr class="detail" id="' + rowId + '" style="display:none"><td colspan="5">' +
-        detailHtml(p) + "</td></tr>";
-    });
-    document.querySelector("#pools-table tbody").innerHTML = html ||
-      '<tr><td colspan="5" style="color:var(--faint)">No pairs match.</td></tr>';
-    document.getElementById("pool-count").textContent = shown;
-    AstroApp.$all("tr.row-main").forEach(function (tr) {
-      tr.addEventListener("click", function (e) {
-        if (e.target.tagName === "BUTTON") return;
-        var d = document.getElementById(tr.getAttribute("data-row"));
-        d.style.display = d.style.display === "none" ? "" : "none";
-      });
-    });
-    AstroApp.bindCopyButtons();
-  }
-
-  // rough ERG-denominated volume for sorting
-  function ergVol(p) {
-    var q = p.quote, b = p.base, price = p.lastPrice;
-    var bv = p.volume.base, qv = p.volume.quote;
-    var e = 0;
-    if (b.tokenId === AELib.ERG_ID) e += bv;
-    else if (q.tokenId === AELib.ERG_ID && price) e += bv * price;
-    if (q.tokenId === AELib.ERG_ID) e += qv;
-    else if (b.tokenId === AELib.ERG_ID && price) e += qv / price;
-    return e;
-  }
-
-  function detailHtml(p) {
-    var g = '<div class="detail-grid">';
-    g += d("Market id", '<span class="tid">' + AstroApp.esc(p.id) + '</span> <button class="copy-btn" data-copy="' + AstroApp.esc(p.id) + '" data-copy-label="Market ID">copy</button>');
-    g += d("Base", AstroApp.esc(p.base.ticker) + ' <span class="tid">' + AstroApp.esc(AELib.truncateId(p.base.tokenId)) + "</span>");
-    g += d("Quote", AstroApp.esc(p.quote.ticker) + ' <span class="tid">' + AstroApp.esc(AELib.truncateId(p.quote.tokenId)) + "</span>");
-    g += d("Reported volume", fmtUsd(p.volume.base) + " " + AstroApp.esc(p.base.ticker) + " + " + fmtUsd(p.volume.quote) + " " + AstroApp.esc(p.quote.ticker) + " <span class='fee-note'>(" + AstroApp.esc(p.volume.window) + ")</span>");
-    if (p.reserves) {
-      g += d("Estimated reserves", fmtUsd(p.reserves.erg.human) + " ERG / " + fmtUsd(p.reserves.token.human) + " " + AstroApp.esc(AstroApp.tokenLabel(p.reserves.token.tokenId)));
-      g += d("Estimation method", AstroApp.esc(p.reserves.method));
-    } else {
-      g += d("Reserves", "Not published by the API for this pair — quotes route via ERG.");
+  function detail(p) {
+    function field(k, v) {
+      return (
+        '<div><div class="k">' +
+        A.esc(k) +
+        '</div><div class="val">' +
+        v +
+        "</div></div>"
+      );
     }
-    g += d("Liquidity actions", "Disabled in v1. On-chain add/remove ships in Phase 2 with the contract fork + testnet shakedown.");
-    return g + "</div>";
+    return (
+      '<div class="detail-grid">' +
+      field(
+        "Base token",
+        A.esc(A.tokenLabel(p.base.tokenId)) +
+          " · " +
+          p.base.decimals +
+          ' decimals<br><span class="tid">' +
+          A.esc(p.base.tokenId) +
+          "</span>" +
+          copy(p.base.tokenId),
+      ) +
+      field(
+        "Quote token",
+        A.esc(A.tokenLabel(p.quote.tokenId)) +
+          " · " +
+          p.quote.decimals +
+          ' decimals<br><span class="tid">' +
+          A.esc(p.quote.tokenId) +
+          "</span>" +
+          copy(p.quote.tokenId),
+      ) +
+      field(
+        "Reported volume",
+        A.compact(p.volume.base) +
+          " " +
+          A.esc(p.base.ticker) +
+          " / " +
+          A.compact(p.volume.quote) +
+          " " +
+          A.esc(p.quote.ticker) +
+          '<br><span class="cell-note">The provider does not specify a time window.</span>',
+      ) +
+      field(
+        "Liquidity actions",
+        "Adding and removing liquidity are not available in v1.",
+      ) +
+      '<div class="full-span"><div class="k">Reserve methodology</div><div class="val">' +
+      A.esc(
+        p.reserves
+          ? p.reserves.method
+          : "Pool reserves are not published for this market. Quotes may route through ERG when both legs are available.",
+      ) +
+      "</div></div></div>"
+    );
   }
-
-  function d(k, v) {
-    return '<div><div class="k">' + k + '</div><div class="val">' + v + "</div></div>";
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    AstroApp.initData(function (state) {
-      render(state.pairs);
-      document.getElementById("pool-search").addEventListener("input", function () {
-        render(state.pairs);
-      });
+  function render() {
+    A.renderStats();
+    var q = el("pool-search").value.trim().toLowerCase(),
+      sort = el("sort-by").value;
+    var pairs = A.state.pairs
+      .filter(function (p) {
+        return (
+          (filter !== "erg" ||
+            p.base.tokenId === AELib.ERG_ID ||
+            p.quote.tokenId === AELib.ERG_ID) &&
+          (!q ||
+            (
+              p.base.ticker +
+              " " +
+              p.quote.ticker +
+              " " +
+              p.base.tokenId +
+              " " +
+              p.quote.tokenId
+            )
+              .toLowerCase()
+              .includes(q))
+        );
+      })
+      .slice();
+    pairs.sort(function (a, b) {
+      if (sort === "name")
+        return (a.base.ticker + "/" + a.quote.ticker).localeCompare(
+          b.base.ticker + "/" + b.quote.ticker,
+        );
+      if (sort === "price") return b.lastPrice - a.lastPrice;
+      return A.ergVolume(b) - A.ergVolume(a);
     });
+    var pages = Math.max(1, Math.ceil(pairs.length / pageSize));
+    page = Math.min(page, pages - 1);
+    var start = page * pageSize,
+      slice = pairs.slice(start, start + pageSize);
+    el("pool-count").textContent = pairs.length.toLocaleString();
+    el("pools-table").querySelector("tbody").innerHTML = slice.length
+      ? slice
+          .map(function (p, i) {
+            var idx = start + i,
+              key = p.id,
+              open = expanded.has(key),
+              base = p.base.tokenId,
+              quote = p.quote.tokenId,
+              vol = A.ergVolume(p),
+              canQuote =
+                (base === AELib.ERG_ID ||
+                  AELib.findErgPair(A.state.pairs, base)) &&
+                (quote === AELib.ERG_ID ||
+                  AELib.findErgPair(A.state.pairs, quote));
+            return (
+              '<tr class="row-main" aria-expanded="' +
+              open +
+              '"><td><div class="asset-cell"><span class="token-pair-icons">' +
+              A.tokenAvatar(base) +
+              A.tokenAvatar(quote) +
+              '</span><button class="pair-name" data-expand="' +
+              A.esc(key) +
+              '" aria-expanded="' +
+              open +
+              '" aria-controls="pool-detail-' +
+              idx +
+              '">' +
+              A.esc(p.base.ticker) +
+              " / " +
+              A.esc(p.quote.ticker) +
+              A.icon("chevron") +
+              "</button></div></td><td>" +
+              A.compact(p.lastPrice) +
+              '<span class="cell-note">' +
+              A.esc(p.quote.ticker) +
+              " per " +
+              A.esc(p.base.ticker) +
+              "</span></td><td>" +
+              (vol ? A.compact(vol) + " ERG" : "—") +
+              '<span class="cell-note">' +
+              (vol ? "Reported" : "No ERG volume") +
+              "</span></td><td>" +
+              (p.reserves
+                ? A.compact(p.reserves.erg.human) +
+                  ' ERG<span class="cell-note">+ ' +
+                  A.compact(p.reserves.token.human) +
+                  " " +
+                  A.esc(A.tokenLabel(p.reserves.token.tokenId)) +
+                  " · estimated</span>"
+                : '<span class="muted">Not published</span>') +
+              "</td><td>" +
+              (canQuote
+                ? '<a class="quote-link" href="index.html?from=' +
+                  base +
+                  "&amp;to=" +
+                  quote +
+                  '">Preview</a>'
+                : '<span class="cell-note">No quote route</span>') +
+              '</td></tr><tr class="detail" id="pool-detail-' +
+              idx +
+              '" ' +
+              (open ? "" : "hidden") +
+              '><td colspan="5">' +
+              detail(p) +
+              "</td></tr>"
+            );
+          })
+          .join("")
+      : '<tr><td colspan="5"><div class="empty-state"><strong>' +
+        (!A.state.pairs.length
+          ? "Market data unavailable"
+          : "No matching markets") +
+        "</strong>" +
+        (!A.state.pairs.length
+          ? "Refresh the data to try again."
+          : "Try another token name or clear your search.") +
+        "</div></td></tr>";
+    el("page-info").textContent = pairs.length
+      ? start +
+        1 +
+        "–" +
+        Math.min(start + pageSize, pairs.length) +
+        " of " +
+        pairs.length +
+        " markets"
+      : "0 markets";
+    el("prev-page").disabled = page === 0;
+    el("next-page").disabled = page >= pages - 1;
+    A.bindCopyButtons();
+    A.$all("[data-expand]").forEach(function (b) {
+      b.onclick = function () {
+        var key = b.dataset.expand,
+          open = !expanded.has(key);
+        if (open) expanded.add(key);
+        else expanded.delete(key);
+        b.setAttribute("aria-expanded", String(open));
+        b.closest("tr").setAttribute("aria-expanded", String(open));
+        el(b.getAttribute("aria-controls")).hidden = !open;
+      };
+    });
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    el("pool-search").oninput = function () {
+      page = 0;
+      render();
+    };
+    el("sort-by").onchange = function () {
+      page = 0;
+      render();
+    };
+    A.$all("[data-filter]").forEach(function (b) {
+      b.onclick = function () {
+        filter = b.dataset.filter;
+        page = 0;
+        A.$all("[data-filter]").forEach(function (x) {
+          var on = x === b;
+          x.classList.toggle("on", on);
+          x.setAttribute("aria-pressed", String(on));
+        });
+        render();
+      };
+    });
+    el("prev-page").onclick = function () {
+      page--;
+      render();
+    };
+    el("next-page").onclick = function () {
+      page++;
+      render();
+    };
+    A.initData(render);
   });
 })();

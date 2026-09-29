@@ -1,0 +1,18 @@
+AIRLOCK WEBSITE UPDATE
+
+1. Extract this ZIP.
+2. Open https://github.com/Kshot3000/MY-ERGO-DEX on the main branch.
+3. Click Add file, then Upload files.
+4. Drag the EXTRACTED files and folders into GitHub.
+   The four HTML pages must be at the repository root.
+   Keep the assets, css, js, data, scripts, and tests folders intact.
+   Replace existing files with the versions in this ZIP.
+5. Commit the upload.
+6. GitHub Pages will rebuild. Visit:
+   https://kshot3000.github.io/MY-ERGO-DEX/
+
+Do not upload only the ZIP. GitHub Pages needs the extracted files.
+No build or npm installation is needed.
+
+This redesign preserves the quote-only product. It does not enable
+real swaps or liquidity deposits. Wallet connection is read-only.

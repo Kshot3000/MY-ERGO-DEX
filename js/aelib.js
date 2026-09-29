@@ -16,8 +16,8 @@
   "use strict";
 
   var ERG_ID = "0".repeat(64);
-  var POOL_FEE_BPS = 50;      // 0.5% — Spectrum-style AMM, kept in reserves
-  var PROTOCOL_FEE_BPS = 25;  // 0.25% — protocol fee (goes live with Phase 2 settlement)
+  var POOL_FEE_BPS = 50; // 0.5% — Spectrum-style AMM, kept in reserves
+  var PROTOCOL_FEE_BPS = 25; // 0.25% — protocol fee (goes live with Phase 2 settlement)
   var BPS = 10000n;
   // Reserve-estimation heuristic: assumed pool depth ~= this multiple of
   // reported volume. The Spectrum price-tracking API does not publish
@@ -82,7 +82,12 @@
   //      recipient; NOT collected on-chain in v1 (labeled "Phase 2").
   //   2. poolFee = 0.5% of the post-protocol-fee input — stays in reserves.
   //   3. swap executes on the remainder via x*y=k.
-  function quoteExactIn(amountInRaw, reserveInRaw, reserveOutRaw) {
+  function quoteExactIn(
+    amountInRaw,
+    reserveInRaw,
+    reserveOutRaw,
+    protocolFeeBps,
+  ) {
     amountInRaw = BigInt(amountInRaw);
     reserveInRaw = BigInt(reserveInRaw);
     reserveOutRaw = BigInt(reserveOutRaw);
@@ -91,13 +96,17 @@
       throw new Error("pool has no liquidity");
     }
 
-    var protocolFeeRaw = (amountInRaw * BigInt(PROTOCOL_FEE_BPS)) / BPS;
+    var feeBps = protocolFeeBps == null ? PROTOCOL_FEE_BPS : protocolFeeBps;
+    if (!Number.isInteger(feeBps) || feeBps < 0 || feeBps >= 10000)
+      throw new Error("invalid protocol fee");
+    var protocolFeeRaw = (amountInRaw * BigInt(feeBps)) / BPS;
     var afterProtocol = amountInRaw - protocolFeeRaw;
     var poolFeeRaw = (afterProtocol * BigInt(POOL_FEE_BPS)) / BPS;
     var effectiveIn = afterProtocol - poolFeeRaw;
 
     // x*y=k: out = R_out * effIn / (R_in + effIn)
-    var amountOutRaw = (reserveOutRaw * effectiveIn) / (reserveInRaw + effectiveIn);
+    var amountOutRaw =
+      (reserveOutRaw * effectiveIn) / (reserveInRaw + effectiveIn);
 
     // price impact vs infinitesimal spot price (unitless; decimals cancel)
     // spot = R_out / R_in ; exec = out / effectiveIn
@@ -139,8 +148,10 @@
     var best = {}; // key: sorted ids joined -> {score, m, bv, qv}
     rawMarkets.forEach(function (m) {
       try {
-        var b = m.baseId, q = m.quoteId;
-        var ba = m.baseVolume.units.asset, qa = m.quoteVolume.units.asset;
+        var b = m.baseId,
+          q = m.quoteId;
+        var ba = m.baseVolume.units.asset,
+          qa = m.quoteVolume.units.asset;
         var bv = m.baseVolume.value / Math.pow(10, ba.decimals);
         var qv = m.quoteVolume.value / Math.pow(10, qa.decimals);
         var key = [b, q].sort().join("_");
@@ -148,21 +159,31 @@
         if (!best[key] || score > best[key].score) {
           best[key] = { score: score, m: m, bv: bv, qv: qv };
         }
-      } catch (e) { /* skip malformed */ }
+      } catch (e) {
+        /* skip malformed */
+      }
     });
 
     var pairs = Object.keys(best).map(function (key) {
       var entry = best[key];
-      var m = entry.m, bv = entry.bv, qv = entry.qv;
-      var b = m.baseId, q = m.quoteId;
-      var ba = m.baseVolume.units.asset, qa = m.quoteVolume.units.asset;
+      var m = entry.m,
+        bv = entry.bv,
+        qv = entry.qv;
+      var b = m.baseId,
+        q = m.quoteId;
+      var ba = m.baseVolume.units.asset,
+        qa = m.quoteVolume.units.asset;
       var price = m.lastPrice; // human quote-units per human base-unit
       var pair = {
         id: m.id,
         base: { tokenId: b, ticker: ba.ticker, decimals: ba.decimals },
         quote: { tokenId: q, ticker: qa.ticker, decimals: qa.decimals },
         lastPrice: price,
-        volume: { base: bv, quote: qv, window: "undocumented (as reported by api.spectrum.fi)" },
+        volume: {
+          base: bv,
+          quote: qv,
+          window: "undocumented (as reported by api.spectrum.fi)",
+        },
       };
       if ((b === ERG_ID || q === ERG_ID) && price && price > 0) {
         var reserves;
@@ -173,8 +194,11 @@
           var rerg = rx / price;
           reserves = {
             erg: { human: rerg, raw: String(BigInt(Math.floor(rerg * 1e9))) },
-            token: { tokenId: q, human: rx,
-                     raw: String(BigInt(Math.floor(rx * Math.pow(10, qa.decimals)))) },
+            token: {
+              tokenId: q,
+              human: rx,
+              raw: String(BigInt(Math.floor(rx * Math.pow(10, qa.decimals)))),
+            },
           };
         } else {
           // X(base)/ERG(quote): price = ERG per X
@@ -184,13 +208,18 @@
           var tdec = ba.decimals;
           reserves = {
             erg: { human: rerg2, raw: String(BigInt(Math.floor(rerg2 * 1e9))) },
-            token: { tokenId: b, human: rx2,
-                     raw: String(BigInt(Math.floor(rx2 * Math.pow(10, tdec)))) },
+            token: {
+              tokenId: b,
+              human: rx2,
+              raw: String(BigInt(Math.floor(rx2 * Math.pow(10, tdec)))),
+            },
           };
         }
         reserves.estimated = true;
         reserves.method =
-          "heuristic: depth ~= " + VOL_DEPTH_MULT + "x reported volume; " +
+          "heuristic: depth ~= " +
+          VOL_DEPTH_MULT +
+          "x reported volume; " +
           "reserves split 50/50 by value at spot price. Real pool reserves " +
           "are NOT published by the API.";
         pair.reserves = reserves;
@@ -218,12 +247,23 @@
   function quoteTwoLeg(amountInRaw, leg1, leg2) {
     // leg = {reserveInRaw, reserveOutRaw}
     var q1 = quoteExactIn(amountInRaw, leg1.reserveInRaw, leg1.reserveOutRaw);
-    var q2 = quoteExactIn(q1.amountOutRaw, leg2.reserveInRaw, leg2.reserveOutRaw);
+    if (q1.amountOutRaw <= 0n)
+      throw new Error("amount too small for this route");
+    // The protocol fee is modeled once on the original input, never on ERG again.
+    var q2 = quoteExactIn(
+      q1.amountOutRaw,
+      leg2.reserveInRaw,
+      leg2.reserveOutRaw,
+      0,
+    );
     return {
       amountOutRaw: q2.amountOutRaw,
       protocolFeeRaw: q1.protocolFeeRaw, // protocol fee taken once, on the original input
-      poolFeeRaw: q1.poolFeeRaw + q2.poolFeeRaw,
-      priceImpactBps: q1.priceImpactBps + q2.priceImpactBps,
+      // Different token denominations must not be summed. Use legs for display.
+      poolFeeRaw: q1.poolFeeRaw,
+      poolFeesRaw: [q1.poolFeeRaw, q2.poolFeeRaw],
+      priceImpactBps:
+        BPS - ((BPS - q1.priceImpactBps) * (BPS - q2.priceImpactBps)) / BPS,
       legs: [q1, q2],
     };
   }

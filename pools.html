@@ -1,117 +1,319 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pools — Airlock</title>
-<meta name="description" content="Airlock pools: every unique market from Spectrum's public feed, with estimated reserves. Liquidity actions are Phase 2.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.3.1">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='21' fill='%2308121d' stroke='%237dd3fc' stroke-width='3'/%3E%3Cpath d='M15 26a9 9 0 0 1 18 0v3a9 6 0 0 1-18 0z' fill='%237dd3fc' opacity='.85'/%3E%3C/svg%3E">
-</head>
-<body data-page="pools">
-<canvas id="starfield"></canvas>
-<div class="nebula"></div>
-
-<header class="topbar">
-  <div class="wrap topbar-inner">
-    <div class="brand">
-      <svg width="38" height="38" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-        <circle cx="24" cy="24" r="20" fill="rgba(125,211,252,.10)" stroke="#7dd3fc" stroke-width="2.5"/>
-        <path d="M15 25a9 9 0 0 1 18 0v2.5a9 5.5 0 0 1-18 0z" fill="#0b1226" stroke="#7dd3fc" stroke-width="2"/>
-        <ellipse cx="28.5" cy="22.5" rx="2.6" ry="3.4" fill="#7dd3fc" opacity=".75" transform="rotate(18 28.5 22.5)"/>
-        <rect x="9" y="35" width="30" height="5" rx="2.5" fill="#a78bfa" opacity=".55"/>
-        <circle cx="24" cy="6.5" r="2" fill="#ff6b1a"/>
-      </svg>
-      <span class="brand-name">Airlock</span>
-      <span class="brand-tag">v1 · QUOTE TERMINAL</span>
-    </div>
-    <nav class="mainnav">
-      <a href="index.html" data-nav="swap">Swap</a>
-      <a href="pools.html" data-nav="pools">Pools</a>
-      <a href="tokens.html" data-nav="tokens">Tokens</a>
-      <a href="docs.html" data-nav="docs">Docs</a>
-    </nav>
-    <div class="topbar-right">
-      <span class="src-badge loading" id="src-badge">○ loading…</span>
-      <button class="btn small" id="wallet-btn">Connect Nautilus</button>
-      <span class="wallet-chip" id="wallet-chip"><span>🛰</span><span class="addr"></span><span class="bal"></span></span>
-    </div>
-  </div>
-</header>
-
-<main class="wrap">
-  <div class="page-head">
-    <h1>Liquidity pools</h1>
-    <p>Every unique market from Spectrum's public price-tracking feed. Click a row for detail. <span id="pool-count">–</span> pairs tracked.</p>
-    <div class="banner info">
-      <strong>Reserve figures are estimates</strong> — the API publishes prices and volumes, not reserves.
-      Airlock assumes depth ≈ 10× reported volume, split 50/50 by value at spot price
-      (<a href="docs.html#methodology">methodology</a>). Add/remove liquidity is <strong>Phase 2</strong>.
-    </div>
-    <input class="search-input" id="pool-search" placeholder="🔭 Search pairs — e.g. SigUSD, RSN, COMET…" aria-label="Search pools">
-  </div>
-
-  <div class="table-wrap">
-    <table class="data" id="pools-table">
-      <thead>
-        <tr>
-          <th>Pair</th>
-          <th class="num">Price</th>
-          <th class="num">Volume</th>
-          <th>Reserves</th>
-          <th>Liquidity</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="5" style="color:var(--faint)">Loading market data…</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="banner" style="margin-top:22px">
-    <strong>Why are the buttons disabled?</strong>
-    Moving real liquidity needs the on-chain contracts. Phase 2 forks the CC0 Spectrum Finance contracts,
-    shakes them down on testnet, and puts them through community review before any mainnet liquidity is accepted.
-    Until then, every liquidity button stays disabled — on purpose.
-  </div>
-</main>
-
-<footer class="site">
-  <div class="footer-inner">
-    <div>
-      <h4>Airlock</h4>
-      <p>Ergo-native DEX quote terminal. v1: indicative quotes from public market data. Phase 2: on-chain settlement via a fork of the CC0 Spectrum contracts. Nothing here is audited.</p>
-    </div>
-    <div>
-      <h4>Protocol</h4>
-      <ul>
-        <li><a href="docs.html">How it works &amp; fees</a></li>
-        <li><a href="index.html">Swap</a></li>
-        <li><a href="tokens.html">Tokens</a></li>
-        <li><a href="https://github.com/Kshot3000/MY-ERGO-DEX" target="_blank" rel="noopener">GitHub ↗</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4>Protocol fee recipient</h4>
-      <p style="font-family:var(--font-mono);font-size:0.74rem;word-break:break-all"><span data-fee-wallet></span></p>
-      <button class="btn small ghost" data-copy-fee-wallet>Copy address</button>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener">@kshot9000</a> ·
-    market data: Spectrum Finance public API (+ baked snapshots) ·
-    chain data: Ergo explorer · not financial advice
-  </div>
-</footer>
-
-<div class="toast" id="toast" role="status"></div>
-
-<script src="js/aelib.js?v=0.3.2"></script>
-<script src="js/app.js?v=0.3.2"></script>
-<script src="js/fx-starfield.js?v=0.3.2"></script>
-<script src="js/pools.js?v=0.3.2"></script>
-</body>
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#101113" />
+    <title>Explore pools — Airlock</title>
+    <meta
+      name="description"
+      content="Explore Ergo tokens, browse markets, and preview swap quotes with Airlock. Transparent estimates. No on-chain settlement in v1."
+    />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <script>
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem("airlock-theme") || "dark";
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="css/style.css?v=1.0.0" />
+  </head>
+  <body data-page="pools">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="index.html" aria-label="Airlock home"
+          ><svg
+            class="brand-symbol"
+            viewBox="0 0 40 40"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect width="40" height="40" rx="13" fill="currentColor" />
+            <path
+              d="m11 29 9-19 9 19M15 23h10"
+              stroke="#141414"
+              stroke-width="3.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            /></svg
+          ><span>airlock<span class="brand-period">.</span></span></a
+        >
+        <nav class="mainnav" aria-label="Main navigation">
+          <a href="index.html" data-nav="swap">Swap</a
+          ><a href="pools.html" data-nav="pools">Pools</a
+          ><a href="tokens.html" data-nav="tokens">Tokens</a
+          ><a href="docs.html" data-nav="docs">Docs</a>
+        </nav>
+        <div class="topbar-right">
+          <span class="network-chip"
+            ><span class="ergo-mark">Σ</span> Ergo
+            <span class="network-label">network</span></span
+          ><button
+            class="icon-btn theme-toggle"
+            aria-label="Switch color theme"
+            title="Switch color theme"
+          >
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+              />
+            </svg></button
+          ><button class="btn connect-btn" id="wallet-btn">
+            Connect wallet
+          </button>
+        </div>
+      </div>
+    </header>
+    <main id="main" class="wrap explore-main">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">ERGO ECOSYSTEM</span>
+          <h1>Explore pools</h1>
+          <p>
+            Browse Ergo markets and compare indicative prices and reported
+            volumes.
+          </p>
+        </div>
+        <div class="data-status">
+          <span class="src-badge loading" id="src-badge">Loading data</span
+          ><button
+            class="icon-btn small"
+            data-refresh
+            aria-label="Refresh market data"
+          >
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20 7v5h-5M4 17v-5h5" />
+              <path
+                d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 18 17"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="stats-grid" id="market-stats">
+        <div class="stat">
+          <span>Markets tracked</span><strong id="stat-markets">—</strong>
+        </div>
+        <div class="stat">
+          <span>Tokens discovered</span><strong id="stat-tokens">—</strong>
+        </div>
+        <div class="stat">
+          <span>Quote-ready ERG pairs</span><strong id="stat-routes">—</strong>
+        </div>
+      </div>
+      <div class="table-toolbar">
+        <div class="filter-tabs">
+          <button class="filter-tab on" data-filter="all" aria-pressed="true">
+            All markets</button
+          ><button class="filter-tab" data-filter="erg" aria-pressed="false">
+            ERG pairs
+          </button>
+        </div>
+        <div class="search-field">
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m16 16 4.5 4.5" /></svg
+          ><input
+            class="search-input"
+            id="pool-search"
+            type="search"
+            placeholder="Search pairs or token IDs"
+            aria-label="Search pools"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+      <div class="table-caption">
+        <span><span id="pool-count">—</span> markets</span
+        ><label
+          >Sort by
+          <select id="sort-by">
+            <option value="volume">Reported volume</option>
+            <option value="name">Name (A–Z)</option>
+          </select></label
+        >
+      </div>
+      <div
+        class="table-wrap"
+        role="region"
+        aria-label="Explore pools"
+        tabindex="0"
+      >
+        <table class="data" id="pools-table">
+          <thead>
+            <tr>
+              <th scope="col">Market</th>
+              <th scope="col">Spot price</th>
+              <th scope="col">Reported volume</th>
+              <th scope="col">Estimated reserves</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">Loading market data…</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="page-info"></span>
+        <div>
+          <button class="btn secondary small" id="prev-page" disabled>
+            Previous</button
+          ><button class="btn secondary small" id="next-page" disabled>
+            Next
+          </button>
+        </div>
+      </div>
+      <div class="notice wide">
+        <svg
+          class="icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v6m0-10v1" />
+        </svg>
+        <p>
+          Reserves are estimated from reported volume, not actual pool balances.
+          Adding or removing liquidity is unavailable in v1. Volume windows are
+          not specified by the data provider.
+          <a href="docs.html#methodology">Learn more</a>
+        </p>
+      </div>
+    </main>
+    <footer class="site">
+      <div class="footer-top">
+        <a class="brand footer-brand" href="index.html"
+          ><svg
+            class="brand-symbol"
+            viewBox="0 0 40 40"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect width="40" height="40" rx="13" fill="currentColor" />
+            <path
+              d="m11 29 9-19 9 19M15 23h10"
+              stroke="#141414"
+              stroke-width="3.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            /></svg
+          ><span>airlock<span class="brand-period">.</span></span></a
+        ><span class="footer-caption">An open door to Ergo.</span>
+        <nav aria-label="Footer navigation">
+          <a href="docs.html">How it works</a
+          ><a
+            href="https://github.com/Kshot3000/MY-ERGO-DEX"
+            target="_blank"
+            rel="noopener noreferrer"
+            >GitHub</a
+          ><a
+            href="https://x.com/kshot9000"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Built by @kshot9000</a
+          >
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>Airlock v1 · Quote previews only</span
+        ><span>Market data by Spectrum Finance · No on-chain settlement</span>
+      </div>
+    </footer>
+    <dialog
+      class="modal wallet-modal"
+      id="wallet-modal"
+      aria-labelledby="wallet-title"
+    >
+      <div class="modal-head">
+        <h2 id="wallet-title">Connect a wallet</h2>
+        <button
+          class="icon-btn"
+          data-close-dialog
+          aria-label="Close wallet dialog"
+        >
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m6 6 12 12M6 18 18 6" />
+          </svg>
+        </button>
+      </div>
+      <p class="muted">Your wallet. Your control.</p>
+      <div id="wallet-content"></div>
+      <p class="modal-footnote">
+        <svg
+          class="icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" />
+          <path d="m8 12 3 3 5-6" />
+        </svg>
+        Connection only reads your address and ERG balance. Airlock never
+        requests a signature.
+      </p>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <noscript
+      ><div class="noscript">
+        Enable JavaScript to load tokens and preview quotes. No transactions are
+        submitted by this site.
+      </div></noscript
+    >
+    <script src="js/aelib.js?v=1.0.0"></script>
+    <script src="js/app.js?v=1.0.0"></script>
+    <script src="js/pools.js?v=1.0.0"></script>
+  </body>
 </html>
