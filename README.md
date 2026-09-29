@@ -1,4 +1,4 @@
-# AstroErg — Ergo-native DEX quote terminal
+# Airlock — Ergo-native DEX quote terminal
 
 A SundaeSwap-style swap interface for Ergo (EIP-4) tokens with a deep-space
 mission-control theme. **v1 is a quote terminal: it computes indicative swap
@@ -20,7 +20,7 @@ Live: `https://kshot3000.github.io/MY-ERGO-DEX/` (GitHub Pages)
 
 ## Name
 
-**AstroErg** — verified collision-free 2026-09-28 against CoinGecko/CoinMarketCap,
+**Airlock** — verified collision-free 2026-09-28 against CoinGecko/CoinMarketCap,
 X/Twitter, and GitHub. Rejected: `AstroDEX`/`AstroSwap` (taken — Cardano DEX /
 FHEVM project), `StarDEX` (taken — dead ERC-20), `NebulaDEX` (taken — Base DEX),
 `Ergonaut` (taken — Ergo community handbook at ergonaut.space), `NovaDEX`
@@ -30,7 +30,7 @@ Finance + @OrbitPerps).
 ## How quotes work
 
 Spectrum's public price-tracking API publishes `lastPrice` + volumes per
-market — **not pool reserves**. AstroErg estimates reserves as:
+market — **not pool reserves**. Airlock estimates reserves as:
 
 1. Spot price `p = lastPrice` (verified: human quote-units per human base-unit)
 2. Quote-denominated reported volume `V = max(baseVol × p, quoteVol)`
@@ -81,7 +81,7 @@ tests/           # node --test suite (23 tests)
 ## Tests
 
 ```bash
-node --test tests/astroerg.test.js
+node --test tests/airlock.test.js
 ```
 
 23 tests, all passing: x·y=k quote math incl. fees, k-invariant, price impact,

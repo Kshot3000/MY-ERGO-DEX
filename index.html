@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AstroErg — Ergo-native DEX terminal</title>
-<meta name="description" content="AstroErg is an Ergo-native swap quote terminal with a deep-space mission-control theme. v1 quotes only — on-chain settlement ships in Phase 2.">
+<title>Airlock — Ergo-native DEX terminal</title>
+<meta name="description" content="Airlock is an Ergo-native swap quote terminal with a deep-space mission-control theme. v1 quotes only — on-chain settlement ships in Phase 2.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
         <rect x="9" y="35" width="30" height="5" rx="2.5" fill="#a78bfa" opacity=".55"/>
         <circle cx="24" cy="6.5" r="2" fill="#ff6b1a"/>
       </svg>
-      <span class="brand-name">AstroErg</span>
+      <span class="brand-name">Airlock</span>
       <span class="brand-tag">v1 · QUOTE TERMINAL</span>
     </div>
     <nav class="mainnav">
@@ -48,7 +48,7 @@
     <p class="sub">A SundaeSwap-style swap terminal for Ergo-native (EIP-4) tokens — mission-control UI, honest quotes, zero fake trades.</p>
     <div class="banner" role="note">
       <strong>Honest status — v1 quotes, it doesn't settle.</strong>
-      AstroErg v1 computes indicative quotes from public market data. It <strong>does not</strong> create, sign, or submit any on-chain transaction.
+      Airlock v1 computes indicative quotes from public market data. It <strong>does not</strong> create, sign, or submit any on-chain transaction.
       On-chain settlement (forked CC0 Spectrum contracts → testnet shakedown → community review) is <strong>Phase 2</strong>. Nothing here is audited.
     </div>
   </section>
@@ -102,7 +102,7 @@
         <h3 style="font-family:var(--font-display);margin:0 0 10px">👨‍🚀 How quotes work</h3>
         <p style="color:var(--muted);font-size:0.88rem;line-height:1.65;margin:0 0 10px">
           Spectrum's public API publishes prices and volumes per market — <em>not</em> pool reserves.
-          AstroErg estimates reserves as <strong style="color:var(--text)">~10× reported volume, split 50/50 by value at the spot price</strong>,
+          Airlock estimates reserves as <strong style="color:var(--text)">~10× reported volume, split 50/50 by value at the spot price</strong>,
           then runs your trade through <strong style="color:var(--text)">x·y=k</strong> with the 0.5% Spectrum-style pool fee.
           Price impact is computed against that estimated depth, so treat it as indicative.
           Token→token routes go via ERG in two legs and say so.
@@ -166,7 +166,7 @@
 <footer class="site">
   <div class="footer-inner">
     <div>
-      <h4>AstroErg</h4>
+      <h4>Airlock</h4>
       <p>Ergo-native DEX quote terminal. v1: indicative quotes from public market data. Phase 2: on-chain settlement via a fork of the CC0 Spectrum contracts. Nothing here is audited.</p>
     </div>
     <div>
@@ -193,9 +193,9 @@
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="js/aelib.js?v=0.2.0"></script>
-<script src="js/app.js?v=0.2.0"></script>
-<script src="js/fx-starfield.js?v=0.2.0"></script>
-<script src="js/swap.js?v=0.2.0"></script>
+<script src="js/aelib.js?v=0.3.2"></script>
+<script src="js/app.js?v=0.3.2"></script>
+<script src="js/fx-starfield.js?v=0.3.2"></script>
+<script src="js/swap.js?v=0.3.2"></script>
 </body>
 </html>

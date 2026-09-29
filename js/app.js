@@ -1,5 +1,5 @@
 /* ============================================================
-   AstroErg shared app shell — js/app.js (v0.2.0)
+   Airlock shared app shell — js/app.js (v0.2.0)
    - loads market data: tries live Spectrum API, falls back to the baked
      snapshot (CORS blocks browsers from api.spectrum.fi)
    - token metadata directory (always from baked data/tokens.json)
@@ -187,7 +187,7 @@
           });
       })
       .catch(function (e) {
-        console.warn("[astroerg] wallet connect failed:", e);
+        console.warn("[airlock] wallet connect failed:", e);
         toast("Wallet connection failed — see console");
       });
   }

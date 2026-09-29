@@ -1,5 +1,5 @@
 /* ============================================================
-   AstroErg tokens page — js/tokens.js (v0.2.0)
+   Airlock tokens page — js/tokens.js (v0.2.0)
    Token directory: metadata from baked data/tokens.json, prices derived
    from the loaded pairs (live when available, else snapshot).
    ============================================================ */

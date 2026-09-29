@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AstroErg snapshot builder.
+"""Airlock snapshot builder.
 
 Reads data/markets.raw.json (Spectrum price-tracking feed) and produces:
   data/markets.json — deduped pairs + reserve ESTIMATES (see method below)

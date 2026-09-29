@@ -1,5 +1,5 @@
 /* ============================================================
-   AstroErg pools page — js/pools.js (v0.2.0)
+   Airlock pools page — js/pools.js (v0.2.0)
    Table of all unique pairs from market data. Reserve figures are
    ESTIMATES (labeled) for ERG pairs; non-ERG pairs show n/a.
    Add/remove liquidity buttons are disabled + labeled Phase 2.

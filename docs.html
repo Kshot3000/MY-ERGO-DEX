@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Docs — AstroErg</title>
-<meta name="description" content="AstroErg docs: how quotes work, fee structure, reserve-estimation methodology, roadmap, and risks.">
+<title>Docs — Airlock</title>
+<meta name="description" content="Airlock docs: how quotes work, fee structure, reserve-estimation methodology, roadmap, and risks.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
         <rect x="9" y="35" width="30" height="5" rx="2.5" fill="#a78bfa" opacity=".55"/>
         <circle cx="24" cy="6.5" r="2" fill="#ff6b1a"/>
       </svg>
-      <span class="brand-name">AstroErg</span>
+      <span class="brand-name">Airlock</span>
       <span class="brand-tag">v1 · QUOTE TERMINAL</span>
     </div>
     <nav class="mainnav">
@@ -45,11 +45,11 @@
 <main class="wrap docs-body">
   <div class="page-head">
     <h1>Documentation</h1>
-    <p>How AstroErg works, what it costs, how quotes are estimated, and what's still on the launchpad.</p>
+    <p>How Airlock works, what it costs, how quotes are estimated, and what's still on the launchpad.</p>
   </div>
 
   <div class="banner">
-    <strong>Honest status.</strong> AstroErg v1 is a <strong>quote terminal</strong>: it computes indicative swap quotes
+    <strong>Honest status.</strong> Airlock v1 is a <strong>quote terminal</strong>: it computes indicative swap quotes
     from public market data entirely in your browser. It does <strong>not</strong> create, sign, or submit transactions,
     hold custody of anything, or move any funds. On-chain settlement is <strong>Phase 2</strong>.
     Nothing in this project has been audited — and there is no formal audit industry in the Ergo ecosystem,
@@ -58,7 +58,7 @@
 
   <h2>How it works</h2>
   <p>
-    AstroErg is a static site (no servers, no build step). When you open it, the app tries to fetch the public
+    Airlock is a static site (no servers, no build step). When you open it, the app tries to fetch the public
     <code>https://api.spectrum.fi/v1/price-tracking/markets</code> endpoint — 393 markets at last check, no API key —
     and otherwise falls back to a baked snapshot in <code>data/markets.json</code> (pulled at build time with
     <code>scripts/refresh-data.sh</code>). The header badge tells you which one you're seeing, with the snapshot timestamp.
@@ -77,7 +77,7 @@
   <h2 id="methodology">Reserve-estimation methodology</h2>
   <p>
     Spectrum's price-tracking API publishes <code>lastPrice</code> and per-side volumes per market — it does
-    <strong>not</strong> publish pool reserves. Since a quote engine needs reserves, AstroErg <em>estimates</em> them:
+    <strong>not</strong> publish pool reserves. Since a quote engine needs reserves, Airlock <em>estimates</em> them:
   </p>
   <pre>1. Spot price p = lastPrice
      (verified 2026-09-28: human units of QUOTE per human unit of BASE,
@@ -111,7 +111,7 @@
     <h3 style="margin-top:0">Pool fee — 0.5%, accrues to LPs</h3>
     <p>
       Spectrum-style pools keep a 0.5% fee inside reserves on every swap, which accrues to liquidity providers
-      as their share of the pool grows. AstroErg's quote engine applies this fee exactly that way —
+      as their share of the pool grows. Airlock's quote engine applies this fee exactly that way —
       it reduces your output and stays in the (estimated) reserves.
     </p>
   </div>
@@ -151,7 +151,7 @@
     <li><strong>Pool-box contention.</strong> Each AMM pool is a single UTXO; concurrent swaps contend for it and some transactions will need retries. Expect this UX wrinkle in Phase 2.</li>
     <li><strong>Executor-order dependency.</strong> Permissionless off-chain executors decide transaction ordering for order-book style settlement; understand the trust model before using it.</li>
     <li><strong>Estimated depth.</strong> v1 quotes use estimated reserves (see methodology). Real execution prices will differ — sometimes meaningfully on thin pairs.</li>
-    <li><strong>Token lookalikes.</strong> Anyone can mint a token with any ticker on Ergo. Verify 64-hex token IDs; AstroErg links every token to its explorer page.</li>
+    <li><strong>Token lookalikes.</strong> Anyone can mint a token with any ticker on Ergo. Verify 64-hex token IDs; Airlock links every token to its explorer page.</li>
   </ul>
   <p style="color:var(--faint);font-size:0.85rem">Not financial advice. Software is provided as-is; verify everything on the explorer before trusting it.</p>
 
@@ -167,7 +167,7 @@
 <footer class="site">
   <div class="footer-inner">
     <div>
-      <h4>AstroErg</h4>
+      <h4>Airlock</h4>
       <p>Ergo-native DEX quote terminal. v1: indicative quotes from public market data. Phase 2: on-chain settlement via a fork of the CC0 Spectrum contracts. Nothing here is audited.</p>
     </div>
     <div>
@@ -194,8 +194,8 @@
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="js/aelib.js?v=0.2.0"></script>
-<script src="js/app.js?v=0.2.0"></script>
-<script src="js/fx-starfield.js?v=0.2.0"></script>
+<script src="js/aelib.js?v=0.3.2"></script>
+<script src="js/app.js?v=0.3.2"></script>
+<script src="js/fx-starfield.js?v=0.3.2"></script>
 </body>
 </html>

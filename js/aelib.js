@@ -1,5 +1,5 @@
 /* ============================================================
-   AstroErg pure-logic library (aelib)
+   Airlock pure-logic library (aelib)
    UMD: loads as window.AELib in the browser, require()able in node.
    No DOM access here — every function is unit-testable.
 
@@ -77,7 +77,7 @@
   // Returns { amountOutRaw, protocolFeeRaw, poolFeeRaw, priceImpactBps,
   //           executionPriceRaw (out per in, scaled 1e18), spotPriceRaw }.
   //
-  // Fee model (matches Spectrum-style pools + AstroErg protocol fee):
+  // Fee model (matches Spectrum-style pools + Airlock protocol fee):
   //   1. protocolFee = 0.25% of input — earmarked for the protocol fee
   //      recipient; NOT collected on-chain in v1 (labeled "Phase 2").
   //   2. poolFee = 0.5% of the post-protocol-fee input — stays in reserves.

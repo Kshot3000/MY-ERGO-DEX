@@ -1,4 +1,4 @@
-/* AstroErg tests — run with: node --test tests/
+/* Airlock tests — run with: node --test tests/
    Covers: quote math (x*y=k incl. fees), fee math, formatting (ERG 9-dec),
    API parsing with a real-response fixture, token-ID validation. */
 "use strict";

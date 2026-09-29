@@ -1,5 +1,5 @@
 /* ============================================================
-   AstroErg swap page — js/swap.js (v0.2.0)
+   Airlock swap page — js/swap.js (v0.2.0)
 
    QUOTE ENGINE (honest by design):
    - Quotes are computed with x*y=k against RESERVE ESTIMATES derived from

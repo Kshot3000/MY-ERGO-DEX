@@ -1,5 +1,5 @@
 /* ============================================================
-   AstroErg starfield — animated deep-space background.
+   Airlock starfield — animated deep-space background.
    Twinkling stars, slow parallax drift, occasional shooting stars.
    Pure canvas, no assets. Respects prefers-reduced-motion.
    ============================================================ */
