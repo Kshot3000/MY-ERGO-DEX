@@ -961,6 +961,28 @@ details[open] .details-label .icon {
   font-size: 10px;
   color: var(--faint);
 }
+.footer-donate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.footer-donate .donate-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.footer-donate code {
+  font-size: 11px;
+  color: var(--faint);
+  word-break: break-all;
+}
 .modal {
   margin: auto;
   color: var(--text);

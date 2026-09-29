@@ -17,7 +17,7 @@
           localStorage.getItem("airlock-theme") || "dark";
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/style.css?v=1.0.0" />
+    <link rel="stylesheet" href="css/style.css?v=1.0.1" />
   </head>
   <body data-page="pools">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -254,7 +254,12 @@
           >
         </nav>
       </div>
-      <div class="footer-bottom">
+            <div class="footer-donate">
+        <span class="donate-label">Support Airlock &mdash; donate ERG</span>
+        <code data-fee-wallet></code>
+        <button class="btn secondary small" data-copy-fee-wallet>Copy</button>
+      </div>
+<div class="footer-bottom">
         <span>Airlock v1 · Quote previews only</span
         ><span>Market data by Spectrum Finance · No on-chain settlement</span>
       </div>
