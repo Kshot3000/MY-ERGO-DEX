@@ -1,0 +1,40 @@
+/* Visual Refresh 2026.10 — additive, dependency-free, original vector artwork. */
+:root{--vu-accent:#ffb08c;--vu-secondary:#a3dfc5;--vu-base:#101113;--vu-surface:#1d2027;--vu-line:#ffb08c30;--vu-radius:18px;--vu-shadow:0 12px 36px #0003;--vu-art:url("scene.svg")}
+body[data-vu-theme]{background-image:var(--vu-art);background-size:1600px 1000px;background-repeat:no-repeat;background-position:top center;background-color:var(--vu-base);-webkit-font-smoothing:antialiased}
+body[data-vu-theme] :is(h1,h2,h3){text-wrap:balance}
+body[data-vu-theme] :is(.lede,.lead,.hero-description,.hero p.sub){text-wrap:pretty;line-height:1.75}
+body[data-vu-theme] .intro h1{letter-spacing:-.035em;line-height:1.08}
+body[data-vu-theme] :is(.swap-card,.market-card){border-color:var(--vu-line);border-radius:var(--vu-radius);box-shadow:var(--vu-shadow);background-image:linear-gradient(145deg,color-mix(in srgb,var(--vu-accent) 4%,transparent),transparent 65%)}
+body[data-vu-theme] :is(.stat,.stat-card,.stat-value,.epoch-big,.num,.odds){font-variant-numeric:tabular-nums}
+body[data-vu-theme] :is(.btn,.button,.connect-btn,.xbtn){min-height:44px;align-items:center;justify-content:center;gap:8px;transition:background .18s,border-color .18s,box-shadow .18s}
+body[data-vu-theme] :is(.btn,.button,.connect-btn):not(:disabled):hover{box-shadow:0 5px 20px color-mix(in srgb,var(--vu-accent) 13%,transparent)}
+body[data-vu-theme] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]),select,textarea){max-width:100%}
+body[data-vu-theme] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]),select){min-height:42px}
+body[data-vu-theme] :is(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid var(--vu-accent);outline-offset:4px}
+body[data-vu-theme] :is(.brand-mark,.logo,.card-icon,.app-ico){box-shadow:0 0 0 1px var(--vu-line),0 8px 30px color-mix(in srgb,var(--vu-accent) 10%,transparent)}
+body[data-vu-theme] :is(.tbl-wrap,.table-wrap,.table-scroll){overscroll-behavior-inline:contain;scrollbar-width:thin;scrollbar-color:var(--vu-accent) transparent}
+body[data-vu-theme] :is(.eyebrow,.kicker,.stat-label){letter-spacing:.12em}
+body[data-vu-theme] :is(.card,.app-card,.tool,.launch-card) a{text-underline-offset:4px}
+body[data-vu-theme] :is(.card,.app-card,.tool,.launch-card):focus-within{border-color:var(--vu-accent)}
+body[data-vu-theme] :is(.don-addr,.addr,.address,.donation-address-row code,.tip-addr,footer){overflow-wrap:anywhere}
+.vu-skip{position:fixed;top:12px;left:12px;z-index:10001;transform:translateY(-160%);padding:12px 18px;border-radius:8px;background:var(--vu-accent);color:#081320;font:700 14px system-ui;text-decoration:none}
+.vu-skip:focus{transform:none}
+.vu-table{max-width:100%;overflow:auto;overscroll-behavior-inline:contain}
+@media(hover:hover){body[data-vu-theme] :is(a.card,a.app-card,a.tool,.launch-card):hover{border-color:var(--vu-accent);box-shadow:0 12px 32px color-mix(in srgb,var(--vu-accent) 9%,transparent)}}
+@media(max-width:640px){
+ body[data-vu-theme]{background-size:1000px 680px;background-position:center top;background-attachment:scroll}
+ body[data-vu-theme] :is(.hero-cta,.hero-actions,.cta-row,.btn-row){gap:10px;flex-wrap:wrap}
+ body[data-vu-theme] :is(.hero-cta,.hero-actions,.cta-row,.btn-row) .btn{min-height:46px}
+ body[data-vu-theme] :is(.grid2,.grid-2,.two-col){min-width:0}
+ body[data-vu-theme] :is(.hero,.page-heading,.intro) h1{overflow-wrap:break-word}
+ body[data-vu-theme] :is(.card,.panel,.stat,.tool,.swap-card){min-width:0}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto!important}
+ body[data-vu-theme] *,body[data-vu-theme] *::before,body[data-vu-theme] *::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+ body[data-vu-theme] .reveal{opacity:1;transform:none}
+}
+@media print{body[data-vu-theme]{background:#fff!important;color:#111!important}.vu-skip{display:none}body[data-vu-theme] :is(.swap-card,.market-card){box-shadow:none;border-color:#bbb;background:#fff}}
+
+/* Project-specific layout and art direction */
+html:not([data-theme=light]) body[data-vu-theme]{--surface:#1d2027;--surface-raised:#272c36;--line:#414550;--muted:#b9bdc7}.swap-card{border-radius:26px;padding:26px;box-shadow:0 22px 65px #0004}.token-box{padding:20px;border-radius:18px}.intro h1{font-size:clamp(34px,4.6vw,56px);line-height:1.1}.market-card{padding:22px}.topbar{backdrop-filter:blur(18px)}[data-theme=light] body[data-vu-theme]{background-color:var(--bg);--vu-line:#d0d4dd;--vu-shadow:0 10px 30px #20204010}.orbit-glow{opacity:.45}@media(max-width:600px){.swap-card{padding:20px}.token-box{padding:16px}.intro h1{font-size:36px}}
